@@ -7,6 +7,7 @@ from api.serializers import CommentSerializer, ReviewSerializer
 
 class ReviewViewSet(UpdateRatingMixin, viewsets.ModelViewSet):
     """Представление для управления отзывами."""
+
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
 
@@ -31,6 +32,6 @@ class ReviewViewSet(UpdateRatingMixin, viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     """Представление для управления комментариями к отзывам."""
+
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-
