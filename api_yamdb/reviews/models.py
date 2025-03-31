@@ -10,12 +10,10 @@ class Review(models.Model):
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        related_name='reviews'
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='reviews'
     )
     text = models.TextField()
     score = models.IntegerField(
@@ -34,6 +32,7 @@ class Review(models.Model):
         unique_together = ('title', 'user')
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
+        default_related_name = '%(class)ss'
 
 
 class Comment(models.Model):
@@ -41,12 +40,10 @@ class Comment(models.Model):
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
-        related_name='comments'
     )
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='comments'
     )
     text = models.TextField()
     pub_date = models.DateTimeField(auto_now_add=True)
@@ -58,3 +55,4 @@ class Comment(models.Model):
         ordering = ['-pub_date']
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
+        default_related_name = '%(class)ss'
