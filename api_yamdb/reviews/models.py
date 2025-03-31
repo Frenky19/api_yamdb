@@ -90,7 +90,7 @@ class Rating(models.Model):
 
     @staticmethod
     def calculate_average_rating(title_id):
-        """Рассчитывает средний рейтинг для указанного произведения."""
+        """Рассчитывает средний рейтинг для произведения."""
         ratings = Rating.objects.filter(title_id=title_id)
         if not ratings.exists():
             return 0
