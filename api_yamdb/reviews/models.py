@@ -31,6 +31,7 @@ class Review(models.Model):
 
     class Meta:
         ordering = ['-pub_date']
+        unique_together = ('title', 'user')
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
 
@@ -57,41 +58,3 @@ class Comment(models.Model):
         ordering = ['-pub_date']
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
-
-
-class Rating(models.Model):
-    """Модель для рейтингов произведений."""
-    title = models.ForeignKey(
-        Title,
-        on_delete=models.CASCADE,
-        related_name='ratings'
-    )
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='ratings'
-    )
-    score = models.IntegerField(
-        validators=[
-            MinValueValidator(1),
-            MaxValueValidator(10)
-        ]
-    )
-
-    class Meta:
-        unique_together = (
-        'title', 'user')
-        ordering = ['title']
-        verbose_name = 'Рейтинг'
-        verbose_name_plural = 'Рейтинги'
-
-    def __str__(self):
-        return f"{self.user} - {self.title} - {self.score}"
-
-    @staticmethod
-    def calculate_average_rating(title_id):
-        """Рассчитывает средний рейтинг для произведения."""
-        ratings = Rating.objects.filter(title_id=title_id)
-        if not ratings.exists():
-            return 0
-        return sum(rating.score for rating in ratings) / ratings.count()

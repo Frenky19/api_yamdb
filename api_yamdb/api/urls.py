@@ -17,9 +17,6 @@ router_v1.register(
     r'^titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments',
     CommentViewSet, basename='comments'
 )
-router_v1.register(
-    r'^titles/(?P<title_id>\d+)/ratings', RatingViewSet, basename='ratings'
-)
 urlpatterns = [
     path('', include(router_v1.urls)),
     # path('auth/', include('users.urls')),
