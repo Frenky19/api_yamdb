@@ -1,11 +1,17 @@
-from rest_framework.viewsets import ModelViewSet
-from reviews.models import Review, Comment
-from api.serializers import ReviewSerializer
+from rest_framework import viewsets
+
+from .models import Review, Comment, Rating
+from api.serializers import RatingSerializer, CommentSerializer, ReviewSerializer
 
 
-class ReviewViewSet(ModelViewSet):
+class ReviewViewSet(viewsets.ModelViewSet):
+    queryset = Review.objects.all()
     serializer_class = ReviewSerializer
 
-    def get_queryset(self):
-        title_id = self.kwargs.get('title_id')
-        return Review.objects.filter(title_id=title_id)
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+
+class RatingViewSet(viewsets.ModelViewSet):
+    queryset = Rating.objects.all()
+    serializer_class = RatingSerializer

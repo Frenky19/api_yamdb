@@ -1,6 +1,7 @@
 from rest_framework import serializers
+
 from api.models import Category, Genre, Title
-from reviews.models import Review, Comment
+from reviews.models import Review, Comment, Rating
 from users.models import User
 
 
@@ -25,6 +26,14 @@ class TitleSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'username', 'email', 'first_name', 'last_name', 'bio', 'role'
+        )
+
+
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         slug_field='username',
@@ -34,12 +43,28 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = '__all__'
-        read_only_fields = ('title',)
+        read_only_fields = ('title', 'pub_date')
 
 
-class UserSerializer(serializers.ModelSerializer):
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True
+    )
+
     class Meta:
-        model = User
-        fields = (
-            'username', 'email', 'first_name', 'last_name', 'bio', 'role'
-        )
+        model = Comment
+        fields = '__all__'
+        read_only_fields = ('review', 'pub_date')
+
+
+class RatingSerializer(serializers.ModelSerializer):
+    user = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True
+    )
+
+    class Meta:
+        model = Rating
+        fields = '__all__'
+        read_only_fields = ('title',)
