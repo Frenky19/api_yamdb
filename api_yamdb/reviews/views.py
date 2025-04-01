@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 
-from .mixins import UpdateRatingMixin
-from .models import Review, Comment
+from reviews.mixins import UpdateRatingMixin
+from reviews.models import Review, Comment
 from api.serializers import CommentSerializer, ReviewSerializer
 
 
