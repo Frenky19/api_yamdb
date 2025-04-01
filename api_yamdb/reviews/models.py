@@ -5,27 +5,37 @@ from users.models import User
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=256)
+    name = models.CharField(max_length=256, unique=True)
     slug = models.SlugField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
 
 
 class Genre(models.Model):
-    name = models.CharField(max_length=256)
+    name = models.CharField(max_length=256, unique=True)
     slug = models.SlugField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
 
 
 class Title(models.Model):
     name = models.CharField(max_length=256)
-    year = models.IntegerField()
-    description = models.TextField()
-    genre = models.ManyToManyField(Genre)
+    year = models.PositiveIntegerField(validators=[MinValueValidator(1900)])
+    description = models.TextField(blank=True, null=True)
+    genre = models.ManyToManyField(Genre, related_name='titles')
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
-        null=True
+        null=True,
+        related_name='titles'
     )
     # Поле рейтинга (вотчина Джамала:)
     rating = models.IntegerField(null=True)
+
+    def __str__(self):
+        return self.name
 
 
 class Review(models.Model):
