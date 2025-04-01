@@ -3,7 +3,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from django.contrib.auth import authenticate
 from users.models import User
 import secrets
-from users.email import send_confirmation_email
+from django.core.mail import send_mail
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -28,13 +28,13 @@ class SignupSerializer(serializers.ModelSerializer):
         user = User.objects.create(**validated_data)
         user.confirmation_code = secrets.token_urlsafe(6)
         user.save()
-        try:
-            send_confirmation_email(
-                email=user.email,
-                confirmation_code=user.confirmation_code
-            )
-        except Exception as e:
-            print(f"Ошибка отправки email: {e}")
+        send_mail(
+            subject='Код подтверждения Yamdb',
+            message=f'Ваш код подтверждения: {user.confirmation_code}',
+            from_email=None,  # Значение берется из DEFAULT_FROM_EMAIL
+            recipient_list=[user.email],
+            fail_silently=False,
+        )
         return user
 
 

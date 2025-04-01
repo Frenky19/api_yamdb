@@ -55,6 +55,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'users.User'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# DEFAULT_FROM_EMAIL = 'тут должен быть email с которого по умолчанию будет отправляться код доступа'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
