@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
@@ -17,26 +18,117 @@ from users.serializers import (
 
 
 class SignupView(APIView):
+    """
+    Представление для регистрации пользователей и отправки кода подтверждения.
+
+    Разрешает неаутентифицированный доступ. При регистрации:
+    - Если пользователь с указанными username/email существует: генерирует
+        новый код подтверждения.
+    - Если пользователь новый: создает запись пользователя и генерирует код
+        потдверждения.
+    - Во всех случаях отправляет код подтверждения на email.
+    """
+
     permission_classes = (AllowAny,)
 
     def post(self, request):
+        """
+        Обрабатывает POST-запрос с данными регистрации.
+
+        Параметры запроса:
+        - username (обязательный)
+        - email (обязательный)
+
+        Возвращает:
+        - 200 OK с username/email при успешной отправке кода
+        - 500 при ошибке отправки email
+        - 400 при невалидных данных
+        - 404 при отсутствии пользователя в бд
+        """
         serializer = SignupSerializer(data=request.data)
+        username = request.data.get('username')
+        email = request.data.get('email')
+        if User.objects.filter(username=username, email=email).exists():
+            user = get_object_or_404(User, username=username, email=email)
+            confirmation_code = default_token_generator.make_token(user)
+            user.confirmation_code = confirmation_code
+            user.save()
+            try:
+                send_mail(
+                    subject='Код подтверждения',
+                    message=f'Ваш код подтверждения: {confirmation_code}',
+                    from_email=None,
+                    recipient_list=[user.email],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                error_message = (
+                    str(e)
+                    if settings.DEBUG
+                    else 'Не удалось отправить email'
+                )
+                return Response(
+                    {'error': error_message},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            return Response(
+                {"email": email, "username": username},
+                status=status.HTTP_200_OK
+            )
         serializer.is_valid(raise_exception=True)
-        user, created = User.objects.get_or_create(**serializer.validated_data)
-        confirmation_code = default_token_generator.make_token(user)
-        send_mail(
-            subject='Код подтверждения',
-            message=f'Ваш код подтверждения: {confirmation_code}',
-            from_email=None,
-            recipient_list=[user.email],
+        user = User.objects.create(
+            username=serializer.validated_data['username'],
+            email=serializer.validated_data['email']
         )
+        confirmation_code = default_token_generator.make_token(user)
+        user.confirmation_code = confirmation_code
+        user.save()
+        try:
+            send_mail(
+                subject='Код подтверждения',
+                message=f'Ваш код подтверждения: {confirmation_code}',
+                from_email=None,
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            error_message = (
+                str(e)
+                if settings.DEBUG
+                else 'Не удалось отправить email'
+            )
+            return Response(
+                {'error': error_message},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class TokenObtainView(APIView):
+    """
+    Представление для получения JWT токена после верификации confirmation_code.
+
+    Разрешает неаутентифицированный доступ. Проверяет соответствие:
+    - username пользователя
+    - кода подтверждения из email
+    При успехе возвращает JWT токен для аутентификации.
+    """
+
     permission_classes = (AllowAny,)
 
     def post(self, request):
+        """
+        Проверяет код подтверждения и выдает токен доступа.
+
+        Параметры запроса:
+        - username (обязательный)
+        - confirmation_code (обязательный)
+
+        Возвращает:
+        - 200 OK с JWT токеном при успешной проверке
+        - 400 при неверном коде или отсутствии пользователя
+        - 404 при отсутствии пользователя в бд
+        """
         serializer = TokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = get_object_or_404(
@@ -54,7 +146,18 @@ class TokenObtainView(APIView):
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    """ViewSet для управления пользователями."""
+    """
+    ViewSet для управления пользователями через API.
+
+    Требует прав администратора для операций:
+    - Просмотр списка/детализации
+    - Создание/изменение/удаление пользователей
+
+    Поддерживает:
+    - Поиск по username (параметр search)
+    - Пагинацию
+    - Кастомный эндпоинт /me/ для личных данных
+    """
 
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -63,6 +166,7 @@ class UserViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
     lookup_field = 'username'
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
     @action(
         detail=False,
@@ -71,13 +175,21 @@ class UserViewSet(viewsets.ModelViewSet):
         url_path='me'
     )
     def me(self, request):
-        """Получение и изменение данных своей учетной записи."""
-        user = request.user
+        """
+        Эндпоинт для работы с данными текущего пользователя.
 
+        GET:
+        - Возвращает данные аутентифицированного пользователя
+
+        PATCH:
+        - Позволяет частичное обновление данных пользователя
+        - Запрещает изменение ролей и других привилегированных полей
+        - Валидирует входные данные через MeSerializer
+        """
+        user = request.user
         if request.method == 'GET':
             serializer = UserSerializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
-
         serializer = MeSerializer(
             user,
             data=request.data,
@@ -85,46 +197,4 @@ class UserViewSet(viewsets.ModelViewSet):
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-
-
-# from rest_framework.generics import RetrieveUpdateAPIView
-# from rest_framework.views import APIView
-# from rest_framework.response import Response
-# from rest_framework import status, permissions
-# from users.serializers import UserSerializer, SignupSerializer, TokenSerializer
-
-
-# class UserView(RetrieveUpdateAPIView):
-#     serializer_class = UserSerializer
-
-#     def get_object(self):
-#         return self.request.user
-
-#     def perform_update(self, serializer):
-#         if 'role' in serializer.validated_data:
-#             if not self.request.user.is_admin:
-#                 del serializer.validated_data['role']
-#         serializer.save()
-
-
-# class SignupView(APIView):
-#     permission_classes = (permissions.AllowAny,)
-
-#     def post(self, request):
-#         serializer = SignupSerializer(data=request.data)
-#         serializer.is_valid(raise_exception=True)
-#         serializer.save()
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-# class TokenView(APIView):
-#     permission_classes = (permissions.AllowAny,)
-
-#     def post(self, request):
-#         serializer = TokenSerializer(data=request.data)
-#         serializer.is_valid(raise_exception=True)
-#         return Response(serializer.validated_data, status=status.HTTP_200_OK)
