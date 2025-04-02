@@ -13,7 +13,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from users.models import User
 from users.permissions import IsAdmin
 from users.serializers import (
-    TokenSerializer, UserSerializer, MeSerializer, SignupSerializer
+    MeSerializer, SignupSerializer, TokenSerializer, UserSerializer
 )
 
 
