@@ -1,4 +1,4 @@
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.text import Truncator
 
@@ -19,6 +19,7 @@ class Category(models.Model):
     slug = models.SlugField(max_length=50, unique=True)
 
     class Meta:
+        ordering = ["name"]
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
         default_related_name = '%(class)ss'
@@ -40,6 +41,7 @@ class Genre(models.Model):
     slug = models.SlugField(max_length=50, unique=True)
 
     class Meta:
+        ordering = ["name"]
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
         default_related_name = '%(class)ss'
@@ -190,6 +192,7 @@ class Comment(models.Model):
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
         default_related_name = '%(class)ss'
+        ordering = ["pub_date"]
 
     def __str__(self):
         """Возвращает ограниченное строковое представление комментария."""

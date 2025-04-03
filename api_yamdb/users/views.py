@@ -10,9 +10,8 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from users.models import User
 from users.permissions import IsAdmin
-from users.serializers import (
-    MeSerializer, SignupSerializer, TokenSerializer, UserSerializer
-)
+from users.serializers import (MeSerializer, SignupSerializer, TokenSerializer,
+                               UserSerializer)
 from users.service import send_confirmation_email
 
 

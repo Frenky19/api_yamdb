@@ -7,16 +7,12 @@ from rest_framework.viewsets import ModelViewSet
 
 from reviews.filters import TitleFilter
 from reviews.mixins import ModelMixinSet, PUTNotAllowedMixin
-from reviews.models import Category, Genre, Title, Review
-from reviews.serializers import (
-    CategorySerializer, CommentSerializer,
-    ReviewSerializer, TitleReadSerializer,
-    TitleWriteSerializer, GenreSerializer,
-)
-from users.permissions import (
-    IsAdminUserOrReadOnly,
-    AdminModeratorAuthorPermission
-)
+from reviews.models import Category, Genre, Review, Title
+from reviews.serializers import (CategorySerializer, CommentSerializer,
+                                 GenreSerializer, ReviewSerializer,
+                                 TitleReadSerializer, TitleWriteSerializer)
+from users.permissions import (AdminModeratorAuthorPermission,
+                               IsAdminUserOrReadOnly)
 
 
 class CategoryViewSet(ModelMixinSet):
@@ -99,7 +95,7 @@ class TitleViewSet(PUTNotAllowedMixin, ModelViewSet):
 
     queryset = Title.objects.annotate(
         rating=Avg('reviews__score')
-    ).all()
+    ).all().order_by('rating')
     permission_classes = (IsAdminUserOrReadOnly,)
     filter_backends = (DjangoFilterBackend, )
     filterset_class = TitleFilter

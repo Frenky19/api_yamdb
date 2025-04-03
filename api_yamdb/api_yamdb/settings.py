@@ -2,7 +2,6 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # По хорошему, ключ надо в ".env" засунуть, но я не знаю как это отразится на работе в команде
