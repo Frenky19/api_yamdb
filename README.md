@@ -98,29 +98,21 @@ python manage.py runserver
 class User(AbstractUser):
     email = models.EmailField('Электронная почта', max_length=254, unique=True)
     bio = models.TextField('Биография', blank=True)
-    role = models.CharField(
-        'Роль',
-        max_length=20,
-        choices=ROLE_CHOICES,
-        default='user'
-    )
-    confirmation_code = models.CharField(
-        'Код подтверждения',
-        max_length=16,
-        blank=True
-    )
+    role = models.CharField('Роль', max_length=20, choices=ROLE_CHOICES, default='user')
+    confirmation_code = models.CharField('Код подтверждения', max_length=16, blank=True)
     ...другие поля
 
 class Title(models.Model):
-    name = models.CharField(max_length=256)
-    year = models.PositiveIntegerField(validators=[MinValueValidator(1900)])
-    description = models.TextField(blank=True, null=True)
+    name = models.CharField('название', max_length=200, db_index=True)
+    year = models.IntegerField('год', validators=(validate_year, ))
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, verbose_name='категория', null=True, blank=True)
     ... другие поля
 
 class Review(models.Model):
-    title = models.ForeignKey(Title, on_delete=models.CASCADE)
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
-    score = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)])
+    title = models.ForeignKey(Title, on_delete=models.CASCADE, verbose_name='произведение')
+    text = models.CharField(max_length=200)
+    author = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='автор', null=True)
+    score = models.IntegerField('оценка', validators=(MinValueValidator(1), MaxValueValidator(10))),
     ... другие поля
 ```
 
