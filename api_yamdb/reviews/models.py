@@ -1,8 +1,10 @@
-from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db import models
+from django.utils.text import Truncator
 
-from users.models import User
 from reviews.validators import validate_year
+from users.constants import LIMIT_OF_SYMBOLS
+from users.models import User
 
 
 class Category(models.Model):
@@ -23,7 +25,7 @@ class Category(models.Model):
 
     def __str__(self):
         """Возвращает ограниченное строковое представление категории."""
-        return self.name
+        return Truncator(self.name).words(LIMIT_OF_SYMBOLS)
 
 
 class Genre(models.Model):
@@ -44,7 +46,7 @@ class Genre(models.Model):
 
     def __str__(self):
         """Возвращает ограниченное строковое представление жанра."""
-        return self.name
+        return Truncator(self.name).words(LIMIT_OF_SYMBOLS)
 
 
 class Title(models.Model):
@@ -92,7 +94,7 @@ class Title(models.Model):
 
     def __str__(self):
         """Возвращает ограниченное строковое представление произведения."""
-        return self.name
+        return Truncator(self.name).words(LIMIT_OF_SYMBOLS)
 
 
 class Review(models.Model):
@@ -150,7 +152,7 @@ class Review(models.Model):
 
     def __str__(self):
         """Возвращает ограниченное строковое представление отзыва."""
-        return self.text
+        return Truncator(self.text).words(LIMIT_OF_SYMBOLS)
 
 
 class Comment(models.Model):
@@ -191,4 +193,4 @@ class Comment(models.Model):
 
     def __str__(self):
         """Возвращает ограниченное строковое представление комментария."""
-        return self.text
+        return Truncator(self.text).words(LIMIT_OF_SYMBOLS)

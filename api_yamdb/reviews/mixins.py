@@ -1,12 +1,19 @@
 from rest_framework import status
+from rest_framework.mixins import (
+    CreateModelMixin,
+    DestroyModelMixin,
+    ListModelMixin
+)
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
-from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
-                                   ListModelMixin)
 
 
-class ModelMixinSet(CreateModelMixin, ListModelMixin,
-                    DestroyModelMixin, GenericViewSet):
+class ModelMixinSet(
+    CreateModelMixin,
+    ListModelMixin,
+    DestroyModelMixin,
+    GenericViewSet
+):
     """
     Набор миксинов для создания, списка и удаления моделей.
 
@@ -35,6 +42,19 @@ class PUTNotAllowedMixin:
         partial_update: Делает частичное обновление объекта.
     """
     def update(self, request, *args, **kwargs):
+        """
+        Обрабатывает запросы на обновление объекта.
+
+        Параметры:
+            request (Request): Объект HTTP-запроса
+            *args: Аргументы
+            **kwargs: Именованные аргументы
+
+        Возвращает:
+            Response:
+                - 405 Method Not Allowed для PUT-запросов
+                - Стандартный ответ DRF для других методов
+        """
         if request.method == 'PUT':
             return Response(
                 {'error': 'Method not allowed'},
@@ -43,4 +63,5 @@ class PUTNotAllowedMixin:
         return super().update(request, *args, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
+        """Обрабатывает PATCH-запросы для частичного обновления объекта."""
         return super().partial_update(request, *args, **kwargs)
