@@ -64,7 +64,6 @@ class TitleAdmin(admin.ModelAdmin):
         'year',
         'category',
         'description',
-        'get_genres'
     )
     search_fields = ('name', 'year', 'category__name', 'genre__name')
     list_filter = ('category', 'genre')
