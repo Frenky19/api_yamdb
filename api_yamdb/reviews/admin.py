@@ -7,19 +7,27 @@ from reviews.models import Review, Comment
 class ReviewAdmin(admin.ModelAdmin):
     """Административная панель для модели Review."""
 
-    list_display = ('id', 'title', 'user', 'score', 'pub_date')
-    search_fields = ('title__name', 'user__username', 'text')
-    list_filter = ('score', 'pub_date')
-    raw_id_fields = ('title', 'user')
-    ordering = ('-pub_date',)
+    list_display = (
+        'title',
+        'text',
+        'author',
+        'score',
+    )
+    search_fields = ('pub_date',)
+    list_filter = ('pub_date',)
+    empty_value_display = '-пусто-'
 
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
     """Административная панель для модели Comment."""
 
-    list_display = ('id', 'review', 'user', 'text', 'pub_date')
-    search_fields = ('review__title__name', 'user__username', 'text')
-    list_filter = ('pub_date',)
-    raw_id_fields = ('review', 'user')
-    ordering = ('-pub_date',)
+    list_display = (
+        'review',
+        'text',
+        'author',
+        'pub_date',
+    )
+    search_fields = ('review',)
+    list_filter = ('review',)
+    empty_value_display = '-пусто-'
