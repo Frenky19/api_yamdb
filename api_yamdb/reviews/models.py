@@ -6,22 +6,58 @@ from reviews.validators import validate_year
 
 
 class Category(models.Model):
+    """Модель категорий произведений (например, 'Фильмы', 'Книги').
+
+    Attributes:
+        name: Название категории (уникальное).
+        slug: Уникальный идентификатор категории для URL.
+    """
+
     name = models.CharField(max_length=256, unique=True)
     slug = models.SlugField(max_length=50, unique=True)
 
+    class Meta:
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
+        default_related_name = '%(class)ss'
+
     def __str__(self):
+        """Возвращает ограниченное строковое представление категории."""
         return self.name
 
 
 class Genre(models.Model):
+    """Модель жанров произведений (например, 'Фантастика', 'Драма').
+
+    Attributes:
+        name: Название жанра (уникальное).
+        slug: Уникальный идентификатор жанра для URL.
+    """
+
     name = models.CharField(max_length=256, unique=True)
     slug = models.SlugField(max_length=50, unique=True)
 
+    class Meta:
+        verbose_name = 'Жанр'
+        verbose_name_plural = 'Жанры'
+        default_related_name = '%(class)ss'
+
     def __str__(self):
+        """Возвращает ограниченное строковое представление жанра."""
         return self.name
 
 
 class Title(models.Model):
+    """Модель произведения (фильм, книга и т.д.).
+
+    Attributes:
+        name: Название произведения.
+        year: Год выпуска с валидацией (не может быть будущим).
+        category: Связь с категорией (может быть пустой).
+        description: Краткое описание произведения (необязательное).
+        genre: Связь M2M с жанрами.
+    """
+
     name = models.CharField(
         'название',
         max_length=200,
@@ -34,7 +70,6 @@ class Title(models.Model):
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
-        related_name='titles',
         verbose_name='категория',
         null=True,
         blank=True
@@ -47,20 +82,33 @@ class Title(models.Model):
     )
     genre = models.ManyToManyField(
         Genre,
-        related_name='titles',
         verbose_name='жанр'
     )
 
     class Meta:
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
+        default_related_name = '%(class)ss'
 
     def __str__(self):
+        """Возвращает ограниченное строковое представление произведения."""
         return self.name
 
 
 class Review(models.Model):
-    """Модель для отзывов на произведения."""
+    """Модель отзывов на произведения.
+
+    Attributes:
+        title: Связанное произведение (ForeignKey).
+        text: Текст отзыва (до 200 символов).
+        author: Автор отзыва (пользователь).
+        score: Оценка от 1 до 10.
+        pub_date: Дата публикации (автоматически добавляется).
+
+    Constraints:
+        Один автор может оставить только один отзыв на произведение.
+    """
+
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
@@ -101,11 +149,20 @@ class Review(models.Model):
         ordering = ('pub_date',)
 
     def __str__(self):
+        """Возвращает ограниченное строковое представление отзыва."""
         return self.text
 
 
 class Comment(models.Model):
-    """Модель для комментариев к отзывам."""
+    """Модель комментариев к отзывам.
+
+    Attributes:
+        review: Связанный отзыв (ForeignKey).
+        text: Текст комментария (до 200 символов).
+        author: Автор комментария (пользователь).
+        pub_date: Дата публикации (автоматически добавляется).
+    """
+
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
@@ -133,4 +190,5 @@ class Comment(models.Model):
         default_related_name = '%(class)ss'
 
     def __str__(self):
+        """Возвращает ограниченное строковое представление комментария."""
         return self.text
