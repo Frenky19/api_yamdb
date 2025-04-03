@@ -1,7 +1,7 @@
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets
+from rest_framework import filters,permissions, viewsets
 from rest_framework.filters import SearchFilter
 from rest_framework.viewsets import ModelViewSet
 
@@ -97,11 +97,14 @@ class TitleViewSet(PUTNotAllowedMixin, ModelViewSet):
         rating=Avg('reviews__score')
     ).all().order_by('rating')
     permission_classes = (IsAdminUserOrReadOnly,)
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter,
+                       filters.OrderingFilter
+                       )
+    ordering_filds = ('title_id')
     filterset_class = TitleFilter
-### Можно добавить возможность сортировки. Сортировать по всем полям не всегда нужна, ее можно ограничить.
+### ГОТОВО Можно добавить возможность сортировки. Сортировать по всем полям не всегда нужна, ее можно ограничить.
     def get_serializer_class(self):
-        if self.action in ('list', 'retrieve'): ### Можно проверять на "безопасный метод" SAFE_METHODS.
+        if self.action in permissions.SAFE_METHODS: ### ХЗ ХЗ НАДО ЧЕКНУТь Можно проверять на "безопасный метод" SAFE_METHODS.
             return TitleReadSerializer
         return TitleWriteSerializer
 
@@ -130,16 +133,18 @@ class ReviewViewSet(PUTNotAllowedMixin, viewsets.ModelViewSet):
     permission_classes = (AdminModeratorAuthorPermission,)
 
     def get_queryset(self):
-        title = get_object_or_404(
-            Title,
-            id=self.kwargs.get('title_id'))
+        title = self.get_title()
         return title.reviews.all()
 
     def perform_create(self, serializer):
-        title = get_object_or_404( ### Лучше создать метод для получения произведения и избавиться от дублирования.
-            Title,
-            id=self.kwargs.get('title_id'))
+        title = self.get_title() #ГОТОВО
         serializer.save(author=self.request.user, title=title)
+
+    def get_title(self):
+        return get_object_or_404(
+            Title,
+            id=self.kwargs.get('title_id')
+        )
 
 
 class CommentViewSet(PUTNotAllowedMixin, viewsets.ModelViewSet):
@@ -168,14 +173,16 @@ class CommentViewSet(PUTNotAllowedMixin, viewsets.ModelViewSet):
     permission_classes = (AdminModeratorAuthorPermission,)
 
     def get_queryset(self):
-        ### Надо получать review не только по полю id, но и по полю title_id, чтобы быть уверенными в привязке. Тут и в perform_create. Лучше создать метод для получения отзыва и избавиться от дублирования.
-        review = get_object_or_404(
-            Review,
-            id=self.kwargs.get('review_id'))
+        ### ГОТОВО Надо получать review не только по полю id, но и по полю title_id, чтобы быть уверенными в привязке. Тут и в perform_create. Лучше создать метод для получения отзыва и избавиться от дублирования.
+        review = self.get_review()
         return review.comments.all()
 
     def perform_create(self, serializer):
-        review = get_object_or_404(
-            Review,
-            id=self.kwargs.get('review_id'))
+        review = self.get_review()
         serializer.save(author=self.request.user, review=review)
+
+    def get_review(self):
+        return get_object_or_404(
+            Review,
+            id=self.kwargs.get('review_id', 'title_id')
+        )
