@@ -5,15 +5,15 @@ from rest_framework.filters import SearchFilter
 from rest_framework.viewsets import ModelViewSet
 from django_filters.rest_framework import DjangoFilterBackend
 
-from api.filters import TitleFilter
-from api.mixins import ModelMixinSet, PUTNotAllowedMixin
-from api.serializers import (
+from reviews.filters import TitleFilter
+from reviews.mixins import ModelMixinSet, PUTNotAllowedMixin
+from reviews.serializers import (
     CategorySerializer, CommentSerializer,
     ReviewSerializer, TitleReadSerializer,
     TitleWriteSerializer, GenreSerializer,
 )
 from reviews.models import Category, Genre, Title, Review
-from reviews.permissions import (
+from users.permissions import (
     IsAdminUserOrReadOnly,
     AdminModeratorAuthorPermission
 )
