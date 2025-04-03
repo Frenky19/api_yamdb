@@ -4,7 +4,7 @@ from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-
+### Это не миксин, это полноценный вьюсет. Этот класс лежит сейчас в модуле с несоответствующим именем. Можно переместить во вью или создать модуль с более подходящим именем.
 class ModelMixinSet(
     CreateModelMixin,
     ListModelMixin,
@@ -26,9 +26,8 @@ class ModelMixinSet(
     - list: Обработка получения списка объектов модели.
     - destroy: Обработка удаления объекта модели.
     """
-    pass
 
-
+### Лишний класс. Исключить метод 'PUT' можно во вьюсете, перечислив только разрешенные в http_method_names.
 class PUTNotAllowedMixin:
     """
     Миксин для блокировки метода PUT в обновлении объектов.

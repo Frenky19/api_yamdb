@@ -49,6 +49,11 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
+    class Meta:
+        fields = '__all__' ### Сверяемся с спецификацией, вывод не соответствует ТЗ. 
+        model = Review
+
+    ### Этот метод валидации пока не вызывается(работает валидация из модели). Чтобы метод отрабатывал, нужно явно определить поле в сериализаторе.
     def validate_score(self, value):
         """
         Проверяет, что оценка находится в диапазоне от 0 до 10.
@@ -62,7 +67,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         Raises:
             ValidationError: Если оценка выходит за пределы диапазона
         """
-        if 0 > value > 10:
+        if 0 > value > 10: ### Попробуй отдельно проверить -1 и 11 ловит ли условие?! Значения контролируем константами.
             raise serializers.ValidationError('Оценка по 10-бальной шкале!')
         return value
 
@@ -91,10 +96,6 @@ class ReviewSerializer(serializers.ModelSerializer):
             raise ValidationError('Может существовать только один отзыв!')
         return data
 
-    class Meta:
-        fields = '__all__'
-        model = Review
-
 
 class CommentSerializer(serializers.ModelSerializer):
     """
@@ -115,7 +116,7 @@ class CommentSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        fields = '__all__'
+        fields = '__all__' ### Сверяемся с спецификацией, вывод не соответствует ТЗ. 
         model = Comment
 
 
@@ -133,7 +134,8 @@ class TitleReadSerializer(serializers.ModelSerializer):
         many=True
     )
     rating = serializers.IntegerField(read_only=True)
-
+    ### Нужно добавить дефолт, так как после создания произведения в СериальраторЗаписьПроизведения,
+    # на вывод отработает этот сериализатор, а это поле пока что не появляется в ответе(см там комментарий).
     class Meta:
         fields = '__all__'
         model = Title
@@ -155,8 +157,9 @@ class TitleWriteSerializer(serializers.ModelSerializer):
         queryset=Genre.objects.all(),
         slug_field='slug',
         many=True
-    )
+    ) ### Сейчас можно создать произведение без жанров(просто передать пустой список). Нужно добавить еще параметр для поля и устранить этот промах.
 
     class Meta:
         fields = '__all__'
         model = Title
+### При успешном Создании/Обновлении вывод не соответствует ТЗ. Нужно добавить сюда метод, который позволит выводить информацию как при гет-запросе.

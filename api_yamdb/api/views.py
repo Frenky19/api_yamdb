@@ -69,7 +69,7 @@ class GenreViewSet(ModelMixinSet):
     filter_backends = (SearchFilter,)
     search_fields = ('name', )
     lookup_field = 'slug'
-
+### Обратите внимание, что еще можно убрать в общий класс.
 
 class TitleViewSet(PUTNotAllowedMixin, ModelViewSet):
     """
@@ -97,11 +97,11 @@ class TitleViewSet(PUTNotAllowedMixin, ModelViewSet):
         rating=Avg('reviews__score')
     ).all().order_by('rating')
     permission_classes = (IsAdminUserOrReadOnly,)
-    filter_backends = (DjangoFilterBackend, )
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
-
+### Можно добавить возможность сортировки. Сортировать по всем полям не всегда нужна, ее можно ограничить.
     def get_serializer_class(self):
-        if self.action in ('list', 'retrieve'):
+        if self.action in ('list', 'retrieve'): ### Можно проверять на "безопасный метод" SAFE_METHODS.
             return TitleReadSerializer
         return TitleWriteSerializer
 
@@ -136,7 +136,7 @@ class ReviewViewSet(PUTNotAllowedMixin, viewsets.ModelViewSet):
         return title.reviews.all()
 
     def perform_create(self, serializer):
-        title = get_object_or_404(
+        title = get_object_or_404( ### Лучше создать метод для получения произведения и избавиться от дублирования.
             Title,
             id=self.kwargs.get('title_id'))
         serializer.save(author=self.request.user, title=title)
@@ -168,6 +168,7 @@ class CommentViewSet(PUTNotAllowedMixin, viewsets.ModelViewSet):
     permission_classes = (AdminModeratorAuthorPermission,)
 
     def get_queryset(self):
+        ### Надо получать review не только по полю id, но и по полю title_id, чтобы быть уверенными в привязке. Тут и в perform_create. Лучше создать метод для получения отзыва и избавиться от дублирования.
         review = get_object_or_404(
             Review,
             id=self.kwargs.get('review_id'))
