@@ -25,5 +25,5 @@ router_v1.register(
 )
 urlpatterns = [
     path('', include(router_v1.urls)),
-    path('auth/', include('users.urls')),
+    path('auth/', include('users.urls'), name='auth'),
 ]
