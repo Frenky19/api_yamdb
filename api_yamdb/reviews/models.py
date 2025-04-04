@@ -9,7 +9,7 @@ from users.models import User
 
 
 class BaseSlugModel(models.Model):
-
+    """Абстрактная модель для жанров и категорий."""
     name = models.CharField(max_length=LONG_TEXT_LIMIT, unique=True)
     slug = models.SlugField(unique=True)
 
@@ -27,8 +27,6 @@ class Category(BaseSlugModel):
     class Meta(BaseSlugModel.Meta):
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
-### DONE | Принцип DRY. В моделях категорий и жанров одинаковые строки, их лучше вынести в абстрактную модель и наследоваться от нее.
-### DONE | В Meta абстрактного класса стоит добавить сортировку по "имени". Метод __str__ также размещаем в абстрактной. 
 
 
 class Genre(BaseSlugModel):
@@ -37,7 +35,6 @@ class Genre(BaseSlugModel):
     class Meta(BaseSlugModel.Meta):
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
-        default_related_name = '%(class)ss'
 
 
 class Title(models.Model):
@@ -53,10 +50,10 @@ class Title(models.Model):
 
     name = models.CharField(
         'название',
-        max_length=200,
+        max_length=LONG_TEXT_LIMIT,
         db_index=True
     )
-    year = models.PositiveIntegerField( ### DONE! (Неверно подобран тип поля, есть поле с меньшим возможным максимальным числом.
+    year = models.PositiveIntegerField(
         'год',
         validators=(validate_year,)
     )
@@ -131,24 +128,22 @@ class Review(BasePublicationModel):
         on_delete=models.CASCADE,
         verbose_name='произведение'
     )
-    text = models.TextField(max_length=LONG_TEXT_LIMIT) ### DONE | Это поле у нас без ограничения по длине
+    text = models.TextField()
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         verbose_name='автор',
         null=True
     )
-    score = models.PositiveSmallIntegerField( ### DONE | Тут лучше использовать PositiveSmallIntegerField. Будет занимать меньше места в БД.
+    score = models.PositiveSmallIntegerField(
         'оценка',
         validators=(
-            MinValueValidator(MIN_SCORE), ### DONE | Значения контролируем константами.
+            MinValueValidator(MIN_SCORE),
             MaxValueValidator(MAX_SCORE)
         ),
         error_messages={'validators': f'Оценка от {MIN_SCORE} до {MAX_SCORE}!'}
     )
-    ### DONE | Если будем менять значение константы, то сообщение уже не будет соответствовать
-    ### DONE | действительности, его придется тоже править, вот тут как раз и пример
-    ### DONE | преимущества применения констант(поможет f-строка или метод format).
+
     class Meta(BasePublicationModel.Meta):
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
@@ -173,7 +168,7 @@ class Comment(BasePublicationModel):
         on_delete=models.CASCADE,
         verbose_name='отзыв'
     )
-    text = models.TextField('текст комментария', max_length=LONG_TEXT_LIMIT)  ### DONE | Это поле без ограничения по длине
+    text = models.TextField('текст комментария',)
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -190,7 +185,3 @@ class Comment(BasePublicationModel):
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
         default_related_name = '%(class)ss'
-
-# DONE | Принцип DRY. В моделях отзывов и комментариев одинаковые строки, их лучше вынести в абстрактную
-# DONE | модель и наследоваться от нее. В Meta абстрактного класса стоит добавить сортировку. Метод __str__ также размещаем в абстрактной.
-#https://docs.djangoproject.com/en/3.2/topics/db/models/#meta-inheritance.

@@ -18,7 +18,7 @@ class CustomUserAdmin(UserAdmin):
         'is_active',
         'date_joined',
     )
-    search_fields = ('username', 'email',)
+    search_fields = ('^username', '^email',)
     list_filter = ('role', 'is_active', 'date_joined',)
     fieldsets = (
         (None, {'fields': ('username', 'password')}),

@@ -3,17 +3,41 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, viewsets
 from rest_framework.filters import SearchFilter
+from rest_framework.mixins import (
+    CreateModelMixin, DestroyModelMixin, ListModelMixin)
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
-from reviews.filters import TitleFilter
-from reviews.mixins import CustomModelViewSet
+from api.filters import TitleFilter
 from reviews.models import Category, Genre, Review, Title
-from reviews.serializers import (CategorySerializer, CommentSerializer,
-                                 GenreSerializer, ReviewSerializer,
-                                 TitleReadSerializer, TitleWriteSerializer)
-from users.permissions import (AdminModeratorAuthorPermission,
-                               IsAdminUserOrReadOnly)
+from api.serializers import (CategorySerializer, CommentSerializer,
+                             GenreSerializer, ReviewSerializer,
+                             TitleReadSerializer, TitleWriteSerializer)
+from api.permissions import (AdminModeratorAuthorPermission,
+                             IsAdminUserOrReadOnly)
+
+
+class CustomModelViewSet(
+    CreateModelMixin,
+    ListModelMixin,
+    DestroyModelMixin,
+    GenericViewSet
+):
+    """
+    Набор миксинов для создания, списка и удаления моделей.
+
+    Этот класс объединяет функции создания, списка и удаления моделей
+    в одном наборе представлений. Он наследуется от:
+    - CreateModelMixin: Обеспечивает создание новых объектов модели.
+    - ListModelMixin: Обеспечивает получение списка объектов модели.
+    - DestroyModelMixin: Обеспечивает удаление объектов модели.
+    - GenericViewSet: Базовый класс представлений.
+
+    Методы:
+    - create: Обработка создания нового объекта модели.
+    - list: Обработка получения списка объектов модели.
+    - destroy: Обработка удаления объекта модели.
+    """
 
 
 class CategoryViewSet(CustomModelViewSet):
@@ -72,6 +96,7 @@ class GenreViewSet(CustomModelViewSet):
     lookup_field = 'slug'
 ### Обратите внимание, что еще можно убрать в общий класс.
 
+
 class TitleViewSet(ModelViewSet):
     """
     API endpoint для работы с произведениями.
@@ -103,9 +128,9 @@ class TitleViewSet(ModelViewSet):
     ordering_fields = ('title_id',)
     filterset_class = TitleFilter
     http_method_names = ['get', 'post', 'patch', 'delete']
-### DONE | Можно добавить возможность сортировки. Сортировать по всем полям не всегда нужна, ее можно ограничить.
+
     def get_serializer_class(self):
-        if self.request.method in permissions.SAFE_METHODS: ### DONE | Можно проверять на "безопасный метод" SAFE_METHODS.
+        if self.request.method in permissions.SAFE_METHODS:
             return TitleReadSerializer
         return TitleWriteSerializer
 
@@ -132,7 +157,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     serializer_class = ReviewSerializer
 
-    permission_classes = (IsAuthenticatedOrReadOnly, AdminModeratorAuthorPermission)
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          AdminModeratorAuthorPermission)
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_queryset(self):
@@ -140,7 +166,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return title.reviews.all()
 
     def perform_create(self, serializer):
-        title = self.get_title()  # ГОТОВО
+        title = self.get_title()
         serializer.save(author=self.request.user, title=title)
 
     def get_title(self):
@@ -178,7 +204,6 @@ class CommentViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_queryset(self):
-        ### ГОТОВО Надо получать review не только по полю id, но и по полю title_id, чтобы быть уверенными в привязке. Тут и в perform_create. Лучше создать метод для получения отзыва и избавиться от дублирования.
         review = self.get_review()
         return review.comments.all()
 
