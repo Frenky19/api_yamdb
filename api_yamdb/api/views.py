@@ -99,14 +99,13 @@ class TitleViewSet(ModelViewSet):
     ).all().order_by('rating')
     permission_classes = (IsAdminUserOrReadOnly,)
     filter_backends = (DjangoFilterBackend, filters.SearchFilter,
-                       filters.OrderingFilter
-                       )
-    ordering_filds = ('title_id',)
+                       filters.OrderingFilter)
+    ordering_fields = ('title_id',)
     filterset_class = TitleFilter
     http_method_names = ['get', 'post', 'patch', 'delete']
-### ГОТОВО Можно добавить возможность сортировки. Сортировать по всем полям не всегда нужна, ее можно ограничить.
+### DONE | Можно добавить возможность сортировки. Сортировать по всем полям не всегда нужна, ее можно ограничить.
     def get_serializer_class(self):
-        if self.action in permissions.SAFE_METHODS: ### ХЗ ХЗ НАДО ЧЕКНУТь Можно проверять на "безопасный метод" SAFE_METHODS.
+        if self.request.method in permissions.SAFE_METHODS: ### DONE | Можно проверять на "безопасный метод" SAFE_METHODS.
             return TitleReadSerializer
         return TitleWriteSerializer
 

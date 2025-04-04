@@ -1,13 +1,12 @@
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
-from django.core.validators import RegexValidator
 from django.core.mail import send_mail
+from django.core.validators import RegexValidator
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import AccessToken
 
-from users.constants import (ALLOWED_SYMBOLS_FOR_USERNAME,
-                             EMAIL_LENGTH,
+from users.constants import (ALLOWED_SYMBOLS_FOR_USERNAME, EMAIL_LENGTH,
                              USERNAME_LENGTH)
 from users.models import User
 from users.validators import validate_username_not_me

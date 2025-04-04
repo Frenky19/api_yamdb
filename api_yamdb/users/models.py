@@ -4,10 +4,8 @@ from django.db import models
 from django.utils.text import Truncator
 
 from users.constants import (ALLOWED_SYMBOLS_FOR_USERNAME,
-                             CONFIRMATION_CODE_LENGTH,
-                             EMAIL_LENGTH,
-                             LIMIT_OF_SYMBOLS,
-                             USERNAME_LENGTH)
+                             CONFIRMATION_CODE_LENGTH, EMAIL_LENGTH,
+                             LIMIT_OF_SYMBOLS, USERNAME_LENGTH)
 from users.service import get_max_length
 from users.validators import validate_username_not_me
 

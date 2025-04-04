@@ -1,16 +1,14 @@
 from django.conf import settings
-from rest_framework import filters, status, viewsets
+from rest_framework import filters, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import serializers
 
 from users.models import User
 from users.permissions import IsAdmin
-from users.serializers import (SignupSerializer, TokenSerializer,
-                               UserSerializer)
+from users.serializers import SignupSerializer, TokenSerializer, UserSerializer
 
 
 class SignupView(APIView):

@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from reviews.models import Category, Comment, Genre, Review, Title
-from users.constants import MIN_SCORE, MAX_SCORE
+from users.constants import MAX_SCORE, MIN_SCORE
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -52,7 +52,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     score = serializers.IntegerField()
 
     class Meta:
-        fields = ['id', 'text', 'author', 'score', 'pub_date', 'title'] ### ГОТОВО Сверяемся с спецификацией, вывод не соответствует ТЗ.
+        fields = ['id', 'text', 'author', 'score', 'pub_date', 'title'] ### DONE | Сверяемся с спецификацией, вывод не соответствует ТЗ.
         model = Review
 
     ### Этот метод валидации пока не вызывается(работает валидация из модели). Чтобы метод отрабатывал, нужно явно определить поле в сериализаторе.
@@ -120,7 +120,7 @@ class CommentSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        fields = ['id', 'text', 'author', 'pub_date', 'review'] ### Готово Сверяемся с спецификацией, вывод не соответствует ТЗ.
+        fields = ['id', 'text', 'author', 'pub_date', 'review'] ### DONE | Сверяемся с спецификацией, вывод не соответствует ТЗ.
         model = Comment
 
 
@@ -137,8 +137,8 @@ class TitleReadSerializer(serializers.ModelSerializer):
         read_only=True,
         many=True
     )
-    rating = serializers.IntegerField(read_only=True)
-    ### Нужно добавить дефолт, так как после создания произведения в СериальраторЗаписьПроизведения,
+    rating = serializers.IntegerField(read_only=True, default=MIN_SCORE)
+    ### DONE | Нужно добавить дефолт, так как после создания произведения в СериальраторЗаписьПроизведения,
     # на вывод отработает этот сериализатор, а это поле пока что не появляется в ответе(см там комментарий).
     class Meta:
         fields = '__all__'
@@ -160,8 +160,9 @@ class TitleWriteSerializer(serializers.ModelSerializer):
     genre = serializers.SlugRelatedField(
         queryset=Genre.objects.all(),
         slug_field='slug',
-        many=True
-    ) ### Сейчас можно создать произведение без жанров(просто передать пустой список). Нужно добавить еще параметр для поля и устранить этот промах.
+        many=True,
+        allow_empty=False
+    ) ### DONE | (Сейчас можно создать произведение без жанров(просто передать пустой список). Нужно добавить еще параметр для поля и устранить этот промах.
 
     class Meta:
         fields = '__all__'

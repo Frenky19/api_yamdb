@@ -2,6 +2,7 @@ from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
                                    ListModelMixin)
 from rest_framework.viewsets import GenericViewSet
 
+
 ### Готово Это не миксин, это полноценный вьюсет. Этот класс лежит сейчас в модуле с несоответствующим именем. Можно переместить во вью или создать модуль с более подходящим именем.
 ### Оставил тут что бы не засорять views :)
 class CustomModelViewSet(
