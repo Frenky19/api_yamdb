@@ -1,6 +1,4 @@
-from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
@@ -12,9 +10,9 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from users.models import User
 from users.permissions import IsAdmin
-from users.serializers import (
-    MeSerializer, SignupSerializer, TokenSerializer, UserSerializer
-)
+from users.serializers import (MeSerializer, SignupSerializer, TokenSerializer,
+                               UserSerializer)
+from users.service import send_confirmation_email
 
 
 class SignupView(APIView):
@@ -43,7 +41,6 @@ class SignupView(APIView):
         - 200 OK с username/email при успешной отправке кода
         - 500 при ошибке отправки email
         - 400 при невалидных данных
-        - 404 при отсутствии пользователя в бд
         """
         serializer = SignupSerializer(data=request.data)
         username = request.data.get('username')
@@ -53,24 +50,9 @@ class SignupView(APIView):
             confirmation_code = default_token_generator.make_token(user)
             user.confirmation_code = confirmation_code
             user.save()
-            try:
-                send_mail(
-                    subject='Код подтверждения',
-                    message=f'Ваш код подтверждения: {confirmation_code}',
-                    from_email=None,
-                    recipient_list=[user.email],
-                    fail_silently=False,
-                )
-            except Exception as e:
-                error_message = (
-                    str(e)
-                    if settings.DEBUG
-                    else 'Не удалось отправить email'
-                )
-                return Response(
-                    {'error': error_message},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
+            response = send_confirmation_email(user, confirmation_code)
+            if response:
+                return response
             return Response(
                 {"email": email, "username": username},
                 status=status.HTTP_200_OK
@@ -83,24 +65,9 @@ class SignupView(APIView):
         confirmation_code = default_token_generator.make_token(user)
         user.confirmation_code = confirmation_code
         user.save()
-        try:
-            send_mail(
-                subject='Код подтверждения',
-                message=f'Ваш код подтверждения: {confirmation_code}',
-                from_email=None,
-                recipient_list=[user.email],
-                fail_silently=False,
-            )
-        except Exception as e:
-            error_message = (
-                str(e)
-                if settings.DEBUG
-                else 'Не удалось отправить email'
-            )
-            return Response(
-                {'error': error_message},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        response = send_confirmation_email(user, confirmation_code)
+        if response:
+            return response
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

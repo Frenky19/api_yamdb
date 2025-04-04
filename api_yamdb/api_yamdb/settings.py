@@ -2,7 +2,6 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # По хорошему, ключ надо в ".env" засунуть, но я не знаю как это отразится на работе в команде
@@ -11,6 +10,8 @@ SECRET_KEY = 'p&l%385148kslhtyn^##a1)ilz@4zqj=rq&agdol^##zgl9(vs'
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
+
+ADMIN_EMPTY_VALUE_DISPLAY = '-пусто-'
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -21,9 +22,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
-    'api.apps.ApiConfig',
+    'django_filters',
     'users.apps.UsersConfig',
     'reviews.apps.ReviewsConfig',
+    'api.apps.ApiConfig',
 ]
 
 REST_FRAMEWORK = {
