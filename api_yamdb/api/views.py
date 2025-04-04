@@ -1,7 +1,7 @@
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters,permissions, viewsets
+from rest_framework import filters, permissions, viewsets
 from rest_framework.filters import SearchFilter
 from rest_framework.viewsets import ModelViewSet
 
@@ -137,7 +137,7 @@ class ReviewViewSet(PUTNotAllowedMixin, viewsets.ModelViewSet):
         return title.reviews.all()
 
     def perform_create(self, serializer):
-        title = self.get_title() #ГОТОВО
+        title = self.get_title()  # ГОТОВО
         serializer.save(author=self.request.user, title=title)
 
     def get_title(self):
