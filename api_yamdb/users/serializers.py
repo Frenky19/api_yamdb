@@ -1,10 +1,16 @@
+from django.conf import settings
+from django.contrib.auth.tokens import default_token_generator
 from django.core.validators import RegexValidator
+from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.tokens import AccessToken
 
+from users.constants import (ALLOWED_SYMBOLS_FOR_USERNAME,
+                             EMAIL_LENGTH,
+                             USERNAME_LENGTH)
 from users.models import User
+from users.validators import validate_username_not_me
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -21,31 +27,37 @@ class UserSerializer(serializers.ModelSerializer):
             'last_name', 'bio', 'role'
         )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get('request')
+        if request and not request.user.is_admin:
+            self.fields['role'].read_only = True
+
 
 class SignupSerializer(serializers.ModelSerializer):
-    """Сериализатор для регистрации нового пользователя.
+    """Сериализатор для регистрации пользователей, отправки кода подтверждения.
 
-    Выполняет валидацию полей email и username:
-    - email должен быть уникальным;
-    - username должен быть уникальным, соответствовать шаблону и не быть
-        равным 'me'.
+    Обрабатывает валидацию email и username:
+    - Проверяет соответствие username паттерну ALLOWED_SYMBOLS_FOR_USERNAME
+    - Запрещает использование username 'me'
+    - Контролирует уникальность связки email/username
+
+    Методы:
+    - validate: Кастомная проверка на конфликт email/username с существующими
+        пользователями
+    - create: Создает или обновляет пользователя, генерирует код подтверждения
+    - send_confirmation_email: Отправляет код на email пользователя
+
+    Исключения:
+    - ValidationError: При конфликте данных или ошибке отправки email
     """
 
-    email = serializers.EmailField(
-        max_length=254,
-        validators=[UniqueValidator(
-            queryset=User.objects.all(),
-            message='Пользователь с таким email уже существует.'
-        )]
-    )
+    email = serializers.EmailField(max_length=EMAIL_LENGTH)
     username = serializers.CharField(
-        max_length=150,
+        max_length=USERNAME_LENGTH,
         validators=[
-            UniqueValidator(
-                queryset=User.objects.all(),
-                message='Пользователь с таким username уже существует.'
-            ),
-            RegexValidator(regex=r'^[\w.@+-]+\Z')
+            RegexValidator(regex=ALLOWED_SYMBOLS_FOR_USERNAME),
+            validate_username_not_me
         ]
     )
 
@@ -53,12 +65,77 @@ class SignupSerializer(serializers.ModelSerializer):
         model = User
         fields = ('email', 'username')
 
-    def validate_username(self, value):
-        if value.lower() == 'me':
-            raise serializers.ValidationError(
-                'Использовать имя "me" в качестве username запрещено.'
-            )
-        return value
+    def validate(self, data):
+        """Проверяет уникальность связки email/username.
+
+        Args:
+            data (dict): Входные данные (email и username)
+
+        Returns:
+            dict: Валидированные данные
+
+        Raises:
+            ValidationError: Если:
+                - email занят другим username
+                - username занят другим email
+        """
+        email = data.get('email')
+        username = data.get('username')
+        if User.objects.filter(email=email).exists():
+            user = User.objects.get(email=email)
+            if user.username != username:
+                raise serializers.ValidationError(
+                    {'email': 'Email уже занят'}
+                )
+        if User.objects.filter(username=username).exists():
+            user = User.objects.get(username=username)
+            if user.email != email:
+                raise serializers.ValidationError(
+                    {'username': 'Username уже занят'}
+                )
+        return data
+
+    def create(self, validated_data):
+        """Создает или обновляет пользователя.
+
+        Логика:
+        1. Ищет пользователя по email и username
+        2. Если не найден - создает нового с is_active=False
+        3. Генерирует новый confirmation_code
+        4. Отправляет код на email
+
+        Args:
+            validated_data (dict): Валидные данные (email, username)
+
+        Returns:
+            User: Созданный/обновленный пользователь
+        """
+        user, created = User.objects.get_or_create(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            defaults={'is_active': False}
+        )
+        user.confirmation_code = default_token_generator.make_token(user)
+        user.save(update_fields=['confirmation_code'])
+        self.send_confirmation_email(user)
+        return user
+
+    def send_confirmation_email(self, user):
+        """Отправляет письмо с кодом подтверждения.
+
+        Args:
+            user (User): Объект пользователя для отправки
+
+        Raises:
+            ValidationError: При ошибке отправки email
+        """
+        send_mail(
+            subject='Код подтверждения',
+            message=f'Ваш код подтверждения: {user.confirmation_code}',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=False
+        )
 
 
 class TokenSerializer(serializers.Serializer):
@@ -69,10 +146,11 @@ class TokenSerializer(serializers.Serializer):
     возвращает токен и username.
     """
 
-    username = serializers.CharField(max_length=150)
+    username = serializers.CharField(max_length=USERNAME_LENGTH)
     confirmation_code = serializers.CharField()
 
     def validate(self, data):
+        """Основная логика валидации кода подтверждения."""
         user = get_object_or_404(User, username=data['username'])
         confirmation_code = data.get('confirmation_code')
         if not confirmation_code:
@@ -87,20 +165,3 @@ class TokenSerializer(serializers.Serializer):
             'token': str(AccessToken.for_user(user)),
             'username': user.username,
         }
-
-
-class MeSerializer(serializers.ModelSerializer):
-    """Сериализатор для редактирования профиля аутентифицированного юзера.
-
-    Позволяет просматривать и редактировать поля: username, email, first_name,
-    last_name и bio.
-    Поле role не включено и не может быть изменено через этот сериализатор.
-    """
-
-    class Meta:
-        model = User
-        fields = (
-            'username', 'email', 'first_name',
-            'last_name', 'bio'
-        )
-        read_only_fields = ('role',)
