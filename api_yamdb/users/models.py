@@ -3,7 +3,13 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.utils.text import Truncator
 
-from users.constants import LIMIT_OF_SYMBOLS
+from users.constants import (ALLOWED_SYMBOLS_FOR_USERNAME,
+                             CONFIRMATION_CODE_LENGTH,
+                             EMAIL_LENGTH,
+                             LIMIT_OF_SYMBOLS,
+                             USERNAME_LENGTH)
+from users.service import get_max_length
+from users.validators import validate_username_not_me
 
 
 class User(AbstractUser):
@@ -31,26 +37,31 @@ class User(AbstractUser):
     )
     username = models.CharField(
         'Логин',
-        max_length=150,
+        max_length=USERNAME_LENGTH,
         unique=True,
         validators=[
             RegexValidator(
-                regex=r'^[\w.@+-]+\Z',
+                regex=ALLOWED_SYMBOLS_FOR_USERNAME,
                 message='Недопустимые символы в имени пользователя.'
-            )
+            ),
+            validate_username_not_me
         ]
     )
-    email = models.EmailField('Электронная почта', max_length=254, unique=True)
+    email = models.EmailField(
+        'Электронная почта',
+        max_length=EMAIL_LENGTH,
+        unique=True
+    )
     bio = models.TextField('Биография', blank=True)
     role = models.CharField(
         'Роль',
-        max_length=20,
+        max_length=get_max_length(ROLE_CHOICES),
         choices=ROLE_CHOICES,
-        default='user'
+        default=USER
     )
     confirmation_code = models.CharField(
         'Код подтверждения',
-        max_length=16,
+        max_length=CONFIRMATION_CODE_LENGTH,
         blank=True
     )
 
@@ -58,7 +69,6 @@ class User(AbstractUser):
         ordering = ['username']
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
-        default_related_name = '%(class)ss'
 
     def __str__(self):
         """Возвращает ограниченное строковое представление пользователя."""
@@ -67,9 +77,9 @@ class User(AbstractUser):
     @property
     def is_admin(self):
         """Определяет, является ли пользователь администратором."""
-        return self.role == 'admin' or self.is_superuser
+        return self.role == self.ADMIN or self.is_superuser
 
     @property
     def is_moderator(self):
         """Определяет, является ли пользователь модератором."""
-        return self.role == 'moderator'
+        return self.role == self.MODERATOR
