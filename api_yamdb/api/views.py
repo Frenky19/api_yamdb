@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, viewsets
 from rest_framework.filters import SearchFilter
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.viewsets import ModelViewSet
 
 from reviews.filters import TitleFilter
@@ -130,7 +131,7 @@ class ReviewViewSet(PUTNotAllowedMixin, viewsets.ModelViewSet):
     """
 
     serializer_class = ReviewSerializer
-    permission_classes = (AdminModeratorAuthorPermission,)
+    permission_classes = (IsAuthenticatedOrReadOnly, AdminModeratorAuthorPermission)
 
     def get_queryset(self):
         title = self.get_title()
@@ -170,7 +171,8 @@ class CommentViewSet(PUTNotAllowedMixin, viewsets.ModelViewSet):
     """
 
     serializer_class = CommentSerializer
-    permission_classes = (AdminModeratorAuthorPermission,)
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          AdminModeratorAuthorPermission)
 
     def get_queryset(self):
         ### ГОТОВО Надо получать review не только по полю id, но и по полю title_id, чтобы быть уверенными в привязке. Тут и в perform_create. Лучше создать метод для получения отзыва и избавиться от дублирования.
