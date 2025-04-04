@@ -1,18 +1,16 @@
-from django.contrib.auth.tokens import default_token_generator
-from django.shortcuts import get_object_or_404
+from django.conf import settings
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework import serializers
 
 from users.models import User
 from users.permissions import IsAdmin
-from users.serializers import (MeSerializer, SignupSerializer, TokenSerializer,
+from users.serializers import (SignupSerializer, TokenSerializer,
                                UserSerializer)
-from users.service import send_confirmation_email
 
 
 class SignupView(APIView):
@@ -39,46 +37,48 @@ class SignupView(APIView):
 
         Возвращает:
         - 200 OK с username/email при успешной отправке кода
-        - 500 при ошибке отправки email
+        - 500 при ошибке на стороне сервера
         - 400 при невалидных данных
         """
         serializer = SignupSerializer(data=request.data)
-        username = request.data.get('username')
-        email = request.data.get('email')
-        if User.objects.filter(username=username, email=email).exists():
-            user = get_object_or_404(User, username=username, email=email)
-            confirmation_code = default_token_generator.make_token(user)
-            user.confirmation_code = confirmation_code
-            user.save()
-            response = send_confirmation_email(user, confirmation_code)
-            if response:
-                return response
+        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.save()
             return Response(
-                {"email": email, "username": username},
+                {
+                    'email': serializer.data['email'],
+                    'username': serializer.data['username']
+                },
                 status=status.HTTP_200_OK
             )
-        serializer.is_valid(raise_exception=True)
-        user = User.objects.create(
-            username=serializer.validated_data['username'],
-            email=serializer.validated_data['email']
-        )
-        confirmation_code = default_token_generator.make_token(user)
-        user.confirmation_code = confirmation_code
-        user.save()
-        response = send_confirmation_email(user, confirmation_code)
-        if response:
-            return response
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        except serializers.ValidationError as e:
+            error_message = (
+                str(e) if settings.DEBUG
+                else 'Ошибка со стороны клиента'
+            )
+            return Response(
+                {'error': error_message},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            error_message = (
+                str(e) if settings.DEBUG
+                else 'Ошибка на сервере'
+            )
+            return Response(
+                {'error': error_message},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class TokenObtainView(APIView):
     """
     Представление для получения JWT токена после верификации confirmation_code.
 
-    Разрешает неаутентифицированный доступ. Проверяет соответствие:
-    - username пользователя
-    - кода подтверждения из email
-    При успехе возвращает JWT токен для аутентификации.
+    Логика работы:
+    1. Принимает username и confirmation_code
+    2. Валидирует данные через TokenSerializer
+    3. Возвращает JWT токен при успехе
     """
 
     permission_classes = (AllowAny,)
@@ -94,22 +94,10 @@ class TokenObtainView(APIView):
         Возвращает:
         - 200 OK с JWT токеном при успешной проверке
         - 400 при неверном коде или отсутствии пользователя
-        - 404 при отсутствии пользователя в бд
         """
         serializer = TokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = get_object_or_404(
-            User, username=serializer.validated_data['username']
-        )
-        if not default_token_generator.check_token(
-            user, serializer.validated_data['confirmation_code']
-        ):
-            return Response(
-                {'confirmation_code': 'Неверный код подтверждения.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        token = AccessToken.for_user(user)
-        return Response({'token': str(token)}, status=status.HTTP_200_OK)
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -151,16 +139,17 @@ class UserViewSet(viewsets.ModelViewSet):
         PATCH:
         - Позволяет частичное обновление данных пользователя
         - Запрещает изменение ролей и других привилегированных полей
-        - Валидирует входные данные через MeSerializer
+        - Валидирует входные данные через UserSerializer
         """
         user = request.user
         if request.method == 'GET':
-            serializer = UserSerializer(user)
+            serializer = self.get_serializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        serializer = MeSerializer(
+        serializer = self.get_serializer(
             user,
             data=request.data,
             partial=True,
+            context={'request': request}
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
