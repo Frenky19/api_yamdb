@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from reviews.models import Category, Comment, Genre, Review, Title
+from users.constants import MIN_SCORE, MAX_SCORE
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -48,15 +49,16 @@ class ReviewSerializer(serializers.ModelSerializer):
         slug_field='username',
         read_only=True
     )
+    score = serializers.IntegerField()
 
     class Meta:
-        fields = '__all__' ### Сверяемся с спецификацией, вывод не соответствует ТЗ. 
+        fields = ['id', 'text', 'author', 'score', 'pub_date', 'title'] ### ГОТОВО Сверяемся с спецификацией, вывод не соответствует ТЗ.
         model = Review
 
     ### Этот метод валидации пока не вызывается(работает валидация из модели). Чтобы метод отрабатывал, нужно явно определить поле в сериализаторе.
     def validate_score(self, value):
         """
-        Проверяет, что оценка находится в диапазоне от 0 до 10.
+        Проверяет, что оценка находится в диапазоне от 1 до 10.
 
         Args:
             value (int): Значение оценки
@@ -67,8 +69,10 @@ class ReviewSerializer(serializers.ModelSerializer):
         Raises:
             ValidationError: Если оценка выходит за пределы диапазона
         """
-        if 0 > value > 10: ### Попробуй отдельно проверить -1 и 11 ловит ли условие?! Значения контролируем константами.
-            raise serializers.ValidationError('Оценка по 10-бальной шкале!')
+        if value < MIN_SCORE or value > MAX_SCORE: ### Попробуй отдельно проверить -1 и 11 ловит ли условие?! Значения контролируем константами.
+            raise serializers.ValidationError(
+                f'Оценка должна быть от {MIN_SCORE} до {MAX_SCORE}!'
+            )
         return value
 
     def validate(self, data):
@@ -116,7 +120,7 @@ class CommentSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        fields = '__all__' ### Сверяемся с спецификацией, вывод не соответствует ТЗ. 
+        fields = ['id', 'text', 'author', 'pub_date', 'review'] ### Готово Сверяемся с спецификацией, вывод не соответствует ТЗ.
         model = Comment
 
 

@@ -11,6 +11,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+ADMIN_EMPTY_VALUE_DISPLAY = '-пусто-'
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',

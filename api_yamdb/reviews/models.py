@@ -3,7 +3,7 @@ from django.db import models
 from django.utils.text import Truncator
 
 from reviews.validators import validate_year
-from users.constants import LIMIT_OF_SYMBOLS
+from users.constants import LIMIT_OF_SYMBOLS, REVIEW_COMMENT_TEXT_LIMIT,  MIN_SCORE, MAX_SCORE
 from users.models import User
 
 
@@ -99,15 +99,40 @@ class Title(models.Model):
         return Truncator(self.name).words(LIMIT_OF_SYMBOLS)
 
 
-class Review(models.Model):
+class BaseModel(models.Model):
+    """Абстрактная модель для отзывов и комментариев."""
+
+    text = models.CharField(
+        max_length=REVIEW_COMMENT_TEXT_LIMIT,
+        verbose_name='текст'
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='автор',
+        null=True
+    )
+    pub_date = models.DateTimeField(
+        'дата публикации',
+        auto_now_add=True,
+        db_index=True
+    )
+
+    class Meta:
+        abstract = True
+        ordering = ['pub_date']
+
+    def __str__(self):
+        """Возвращает ограниченное строковое представление текста."""
+        return Truncator(self.text).words(REVIEW_COMMENT_TEXT_LIMIT)
+
+
+class Review(BaseModel):
     """Модель отзывов на произведения.
 
     Attributes:
         title: Связанное произведение (ForeignKey).
-        text: Текст отзыва (до 200 символов).
-        author: Автор отзыва (пользователь).
         score: Оценка от 1 до 10.
-        pub_date: Дата публикации (автоматически добавляется).
 
     Constraints:
         Один автор может оставить только один отзыв на произведение.
@@ -125,23 +150,17 @@ class Review(models.Model):
         verbose_name='автор',
         null=True
     )
-    score = models.IntegerField( ### Тут лучше использовать PositiveSmallIntegerField. Будет занимать меньше места в БД.
+    score = models.PositiveSmallIntegerField( ###Готово Тут лучше использовать PositiveSmallIntegerField. Будет занимать меньше места в БД.
         'оценка',
         validators=(
-            MinValueValidator(1), ### Значения контролируем константами.
-            MaxValueValidator(10)
+            MinValueValidator(MIN_SCORE), ### Готово Значения контролируем константами.
+            MaxValueValidator(MAX_SCORE)
         ),
-        error_messages={'validators': 'Оценка от 1 до 10!'}
+        error_messages={'validators': f'Оценка от {MIN_SCORE} до {MAX_SCORE}!'}
     )
     ### Если будем менять значение константы, то сообщение уже не будет соответствовать
     ### действительности, его придется тоже править, вот тут как раз и пример
     ### преимущества применения констант(поможет f-строка или метод format).
-    pub_date = models.DateTimeField(
-        'дата публикации',
-        auto_now_add=True,
-        db_index=True
-    )
-
     class Meta:
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
@@ -151,21 +170,13 @@ class Review(models.Model):
                 fields=('title', 'author',),
                 name='unique review'
             )]
-        ordering = ('pub_date',)
-
-    def __str__(self):
-        """Возвращает ограниченное строковое представление отзыва."""
-        return Truncator(self.text).words(LIMIT_OF_SYMBOLS)
 
 
-class Comment(models.Model):
+class Comment(BaseModel):
     """Модель комментариев к отзывам.
 
     Attributes:
         review: Связанный отзыв (ForeignKey).
-        text: Текст комментария (до 200 символов).
-        author: Автор комментария (пользователь).
-        pub_date: Дата публикации (автоматически добавляется).
     """
 
     review = models.ForeignKey(
@@ -190,11 +201,7 @@ class Comment(models.Model):
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
         default_related_name = '%(class)ss'
-        ordering = ["pub_date"]
 
-    def __str__(self):
-        """Возвращает ограниченное строковое представление комментария."""
-        return Truncator(self.text).words(LIMIT_OF_SYMBOLS)
-#Принцип DRY. В моделях отзывов и комментариев одинаковые строки, их лучше вынести в абстрактную
-# модель и наследоваться от нее. В Meta абстрактного класса стоит добавить сортировку. Метод __str__ также размещаем в абстрактной.
+#ГОТОВОПринцип DRY. В моделях отзывов и комментариев одинаковые строки, их лучше вынести в абстрактную
+#ГОТОВО модель и наследоваться от нее. В Meta абстрактного класса стоит добавить сортировку. Метод __str__ также размещаем в абстрактной.
 #https://docs.djangoproject.com/en/3.2/topics/db/models/#meta-inheritance.

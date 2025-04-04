@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.viewsets import ModelViewSet
 
 from reviews.filters import TitleFilter
-from reviews.mixins import ModelMixinSet, PUTNotAllowedMixin
+from reviews.mixins import CustomModelViewSet
 from reviews.models import Category, Genre, Review, Title
 from reviews.serializers import (CategorySerializer, CommentSerializer,
                                  GenreSerializer, ReviewSerializer,
@@ -16,7 +16,7 @@ from users.permissions import (AdminModeratorAuthorPermission,
                                IsAdminUserOrReadOnly)
 
 
-class CategoryViewSet(ModelMixinSet):
+class CategoryViewSet(CustomModelViewSet):
     """
     API endpoint для работы с категориями произведений.
 
@@ -44,7 +44,7 @@ class CategoryViewSet(ModelMixinSet):
     lookup_field = 'slug'
 
 
-class GenreViewSet(ModelMixinSet):
+class GenreViewSet(CustomModelViewSet):
     """
     API endpoint для работы с жанрами произведений.
 
@@ -72,7 +72,7 @@ class GenreViewSet(ModelMixinSet):
     lookup_field = 'slug'
 ### Обратите внимание, что еще можно убрать в общий класс.
 
-class TitleViewSet(PUTNotAllowedMixin, ModelViewSet):
+class TitleViewSet(ModelViewSet):
     """
     API endpoint для работы с произведениями.
 
@@ -101,8 +101,9 @@ class TitleViewSet(PUTNotAllowedMixin, ModelViewSet):
     filter_backends = (DjangoFilterBackend, filters.SearchFilter,
                        filters.OrderingFilter
                        )
-    ordering_filds = ('title_id')
+    ordering_filds = ('title_id',)
     filterset_class = TitleFilter
+    http_method_names = ['get', 'post', 'patch', 'delete']
 ### ГОТОВО Можно добавить возможность сортировки. Сортировать по всем полям не всегда нужна, ее можно ограничить.
     def get_serializer_class(self):
         if self.action in permissions.SAFE_METHODS: ### ХЗ ХЗ НАДО ЧЕКНУТь Можно проверять на "безопасный метод" SAFE_METHODS.
@@ -110,7 +111,7 @@ class TitleViewSet(PUTNotAllowedMixin, ModelViewSet):
         return TitleWriteSerializer
 
 
-class ReviewViewSet(PUTNotAllowedMixin, viewsets.ModelViewSet):
+class ReviewViewSet(viewsets.ModelViewSet):
     """
     API endpoint для управления отзывами на произведения.
 
@@ -131,7 +132,9 @@ class ReviewViewSet(PUTNotAllowedMixin, viewsets.ModelViewSet):
     """
 
     serializer_class = ReviewSerializer
+
     permission_classes = (IsAuthenticatedOrReadOnly, AdminModeratorAuthorPermission)
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_queryset(self):
         title = self.get_title()
@@ -148,7 +151,7 @@ class ReviewViewSet(PUTNotAllowedMixin, viewsets.ModelViewSet):
         )
 
 
-class CommentViewSet(PUTNotAllowedMixin, viewsets.ModelViewSet):
+class CommentViewSet(viewsets.ModelViewSet):
     """
     API endpoint для управления комментариями к отзывам.
 
@@ -173,6 +176,7 @@ class CommentViewSet(PUTNotAllowedMixin, viewsets.ModelViewSet):
     serializer_class = CommentSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,
                           AdminModeratorAuthorPermission)
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_queryset(self):
         ### ГОТОВО Надо получать review не только по полю id, но и по полю title_id, чтобы быть уверенными в привязке. Тут и в perform_create. Лучше создать метод для получения отзыва и избавиться от дублирования.
@@ -186,5 +190,6 @@ class CommentViewSet(PUTNotAllowedMixin, viewsets.ModelViewSet):
     def get_review(self):
         return get_object_or_404(
             Review,
-            id=self.kwargs.get('review_id', 'title_id')
+            id=self.kwargs.get('review_id'),
+            title_id=self.kwargs.get('title_id')
         )
