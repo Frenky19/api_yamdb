@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
 from users.models import User
-
+from users.constants import ELEMENTS_ON_PAGE_IN_ADMIN
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
@@ -56,4 +56,4 @@ class CustomUserAdmin(UserAdmin):
     )
     readonly_fields = ('date_joined', 'last_login')
     ordering = ('username',)
-    list_per_page = 20
+    list_per_page = ELEMENTS_ON_PAGE_IN_ADMIN
