@@ -1,140 +1,114 @@
-# Это скрипт, копирующий данные из csv в бд, но тесты не пропустили
+import os
 
-# import os
+import pandas as pd
+from django.core.management.base import BaseCommand
 
-# import pandas as pd
-# from django.core.management.base import BaseCommand
-
-# from reviews.models import Category, Comment, Genre, Review, Title
-# from users.models import User
-
-# DATA_DIR = 'static/data'
+from reviews.models import Category, Comment, Genre, Review, Title
+from users.models import User
 
 
-# class Command(BaseCommand):
-#     help = "Загружает данные из файлов CSV в базу данных"
+DATA_DIR = 'static/data'
 
-#     def load_csv(self, file_name):
-#         """
-#         Загружает CSV-файл в DataFrame.
 
-#         Если файл отсутствует, выводит сообщение об ошибке.
-#         """
-#         file_path = os.path.join(DATA_DIR, file_name)
-#         if not os.path.exists(file_path):
-#             self.stdout.write(self.style.ERROR(
-#                 f'Файл {file_name} не найден в директории {DATA_DIR}'))
-#             return None
-#         return pd.read_csv(file_path)
+class Command(BaseCommand):
+    help = "Загружает данные из файлов CSV в базу данных"
 
-#     def handle(self, *args, **kwargs):
-#         self.stdout.write('Начинаем загрузку данных...')
+    def _load_csv(self, file_name):
+        """Загрузка CSV-файла с обработкой ошибок."""
+        file_path = os.path.join(DATA_DIR, file_name)
+        if not os.path.exists(file_path):
+            self.stdout.write(self.style.ERROR(
+                f'Файл {file_name} не найден в директории {DATA_DIR}'))
+            return None
+        return pd.read_csv(file_path)
 
-#         # Загрузка категорий
-#         self.stdout.write('Загрузка категорий...')
-#         category_data = self.load_csv('category.csv')
-#         if category_data is not None:
-#             for _, row in category_data.iterrows():
-#                 Category.objects.get_or_create(
-#                     id=row['id'],
-#                     name=row['name'],
-#                     slug=row['slug'],
-#                 )
-#             self.stdout.write(self.style.SUCCESS(
-#                 f'Загружено {len(category_data)} категорий.'))
+    def _process_category(self, row):
+        Category.objects.get_or_create(
+            id=row['id'],
+            name=row['name'],
+            slug=row['slug'],
+        )
 
-#         # Загрузка жанров
-#         self.stdout.write('Загрузка жанров...')
-#         genre_data = self.load_csv('genre.csv')
-#         if genre_data is not None:
-#             for _, row in genre_data.iterrows():
-#                 Genre.objects.get_or_create(
-#                     id=row['id'],
-#                     name=row['name'],
-#                     slug=row['slug'],
-#                 )
-#             self.stdout.write(self.style.SUCCESS(
-#                 f'Загружено {len(genre_data)} жанров.'))
+    def _process_genre(self, row):
+        Genre.objects.get_or_create(
+            id=row['id'],
+            name=row['name'],
+            slug=row['slug'],
+        )
 
-#         # Загрузка произведений (titles)
-#         self.stdout.write('Загрузка произведений...')
-#         title_data = self.load_csv('titles.csv')
-#         if title_data is not None:
-#             for _, row in title_data.iterrows():
-#                 category = Category.objects.get(id=row['category'])
-#                 Title.objects.get_or_create(
-#                     id=row['id'],
-#                     name=row['name'],
-#                     year=row['year'],
-#                     category=category,
-#                 )
-#             self.stdout.write(self.style.SUCCESS(
-#                 f'Загружено {len(title_data)} произведений.'))
+    def _process_title(self, row):
+        category = Category.objects.get(id=row['category'])
+        Title.objects.get_or_create(
+            id=row['id'],
+            name=row['name'],
+            year=row['year'],
+            category=category,
+        )
 
-#         # Загрузка связей (genre_title)
-#         self.stdout.write('Загрузка связей жанров и произведений...')
-#         genre_title_data = self.load_csv("genre_title.csv")
-#         if genre_title_data is not None:
-#             for _, row in genre_title_data.iterrows():
-#                 title = Title.objects.get(id=row['title_id'])
-#                 genre = Genre.objects.get(id=row['genre_id'])
-#                 title.genre.add(genre)
-#             self.stdout.write(self.style.SUCCESS(
-#                 f'Загружено {len(genre_title_data)}'
-#                 'связей жанров и произведений.'
-#             ))
+    def _process_genre_title(self, row):
+        title = Title.objects.get(id=row['title_id'])
+        genre = Genre.objects.get(id=row['genre_id'])
+        title.genre.add(genre)
 
-#         # Загрузка пользователей
-#         self.stdout.write('Загрузка пользователей...')
-#         user_data = self.load_csv('users.csv')
-#         if user_data is not None:
-#             for _, row in user_data.iterrows():
-#                 User.objects.get_or_create(
-#                     id=row['id'],
-#                     username=row['username'],
-#                     email=row['email'],
-#                     role=row['role'],
-#                     bio=row['bio'] if not pd.isnull(row['bio']) else '',
-#                     first_name=row['first_name'] if not pd.isnull(
-#                         row['first_name']) else '',
-#                     last_name=row['last_name'] if not pd.isnull(
-#                         row['last_name']) else '',
-#                 )
-#             self.stdout.write(self.style.SUCCESS(
-#                 f'Загружено {len(user_data)} пользователей.'))
+    def _process_user(self, row):
+        User.objects.get_or_create(
+            id=row['id'],
+            username=row['username'],
+            email=row['email'],
+            role=row['role'],
+            bio=row['bio'] if not pd.isnull(row['bio']) else '',
+            first_name=row['first_name'] if not pd.isnull(
+                row['first_name']) else '',
+            last_name=row['last_name'] if not pd.isnull(
+                row['last_name']) else '',
+        )
 
-#         # Загрузка отзывов
-#         self.stdout.write('Загрузка отзывов...')
-#         review_data = self.load_csv('review.csv')
-#         if review_data is not None:
-#             for _, row in review_data.iterrows():
-#                 title = Title.objects.get(id=row['title_id'])
-#                 author = User.objects.get(id=row['author'])
-#                 Review.objects.get_or_create(
-#                     id=row['id'],
-#                     title=title,
-#                     text=row['text'],
-#                     author=author,
-#                     score=row['score'],
-#                     pub_date=row['pub_date'],
-#                 )
-#             self.stdout.write(self.style.SUCCESS(
-#                 f'Загружено {len(review_data)} отзывов.'))
+    def _process_review(self, row):
+        title = Title.objects.get(id=row['title_id'])
+        author = User.objects.get(id=row['author'])
+        Review.objects.get_or_create(
+            id=row['id'],
+            title=title,
+            text=row['text'],
+            author=author,
+            score=row['score'],
+            pub_date=row['pub_date'],
+        )
 
-#         # Загрузка комментариев
-#         self.stdout.write('Загрузка комментариев...')
-#         comment_data = self.load_csv('comments.csv')
-#         if comment_data is not None:
-#             for _, row in comment_data.iterrows():
-#                 review = Review.objects.get(id=row['review_id'])
-#                 author = User.objects.get(id=row['author'])
-#                 Comment.objects.get_or_create(
-#                     id=row['id'],
-#                     review=review,
-#                     text=row['text'],
-#                     author=author,
-#                     pub_date=row['pub_date'],
-#                 )
-#             self.stdout.write(self.style.SUCCESS(
-#                 f'Загружено {len(comment_data)} комментариев.'))
-#         self.stdout.write(self.style.SUCCESS('Загрузка данных завершена.'))
+    def _process_comment(self, row):
+        review = Review.objects.get(id=row['review_id'])
+        author = User.objects.get(id=row['author'])
+        Comment.objects.get_or_create(
+            id=row['id'],
+            review=review,
+            text=row['text'],
+            author=author,
+            pub_date=row['pub_date'],
+        )
+
+    def _load_data(self, file_name, processor, model_name):
+        """Общая логика загрузки данных для разных моделей."""
+        self.stdout.write(f'Загрузка {model_name}...')
+        data = self._load_csv(file_name)
+        if data is None:
+            return
+        processor_func = getattr(self, f'_process_{processor}')
+        for _, row in data.iterrows():
+            processor_func(row)
+        self.stdout.write(self.style.SUCCESS(
+            f'Загружено {len(data)} {model_name}.'))
+
+    def handle(self, *args, **options):
+        self.stdout.write('Начинаем загрузку данных...')
+        load_sequence = [
+            ('category.csv', 'category', 'категорий'),
+            ('genre.csv', 'genre', 'жанров'),
+            ('titles.csv', 'title', 'произведений'),
+            ('genre_title.csv', 'genre_title', 'связей жанров и произведений'),
+            ('users.csv', 'user', 'пользователей'),
+            ('review.csv', 'review', 'отзывов'),
+            ('comments.csv', 'comment', 'комментариев'),
+        ]
+        for file_name, processor, model_name in load_sequence:
+            self._load_data(file_name, processor, model_name)
+        self.stdout.write(self.style.SUCCESS('Загрузка данных завершена.'))

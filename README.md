@@ -135,4 +135,4 @@ class Review(models.Model):
 
 - [Джамал Хамзаев](https://github.com/khamzaev)
 
-- [Мария Ковалева](https://github.com/Mary-Kovaleva)
+- [Мария Ковалева / Maria Kovaleva](https://github.com/Mary-Kovaleva)
