@@ -16,6 +16,7 @@ class TitleFilter(filters.FilterSet):
     Используется в API для обеспечения поиска и фильтрации списка произведений
     по запросу пользователя.
     """
+
     category = filters.CharFilter(
         field_name='category__slug',
         lookup_expr='icontains'
