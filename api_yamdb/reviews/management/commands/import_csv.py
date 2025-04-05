@@ -22,68 +22,42 @@ class Command(BaseCommand):
         return pd.read_csv(file_path)
 
     def _process_category(self, row):
-        Category.objects.get_or_create(
-            id=row['id'],
-            name=row['name'],
-            slug=row['slug'],
-        )
+        data = row.to_dict()
+        Category.objects.get_or_create(**data)
 
     def _process_genre(self, row):
-        Genre.objects.get_or_create(
-            id=row['id'],
-            name=row['name'],
-            slug=row['slug'],
-        )
+        data = row.to_dict()
+        Genre.objects.get_or_create(**data)
 
     def _process_title(self, row):
-        category = Category.objects.get(id=row['category'])
-        Title.objects.get_or_create(
-            id=row['id'],
-            name=row['name'],
-            year=row['year'],
-            category=category,
-        )
+        data = row.to_dict()
+        category = Category.objects.get(id=data.pop('category'))
+        Title.objects.get_or_create(category=category, **data)
 
     def _process_genre_title(self, row):
-        title = Title.objects.get(id=row['title_id'])
-        genre = Genre.objects.get(id=row['genre_id'])
+        data = row.to_dict()
+        title = Title.objects.get(id=data['title_id'])
+        genre = Genre.objects.get(id=data['genre_id'])
         title.genre.add(genre)
 
     def _process_user(self, row):
-        User.objects.get_or_create(
-            id=row['id'],
-            username=row['username'],
-            email=row['email'],
-            role=row['role'],
-            bio=row['bio'] if not pd.isnull(row['bio']) else '',
-            first_name=row['first_name'] if not pd.isnull(
-                row['first_name']) else '',
-            last_name=row['last_name'] if not pd.isnull(
-                row['last_name']) else '',
-        )
+        data = row.to_dict()
+        for field in ['bio', 'first_name', 'last_name']:
+            if pd.isna(data.get(field)):
+                data[field] = ''
+        User.objects.get_or_create(**data)
 
     def _process_review(self, row):
-        title = Title.objects.get(id=row['title_id'])
-        author = User.objects.get(id=row['author'])
-        Review.objects.get_or_create(
-            id=row['id'],
-            title=title,
-            text=row['text'],
-            author=author,
-            score=row['score'],
-            pub_date=row['pub_date'],
-        )
+        data = row.to_dict()
+        title = Title.objects.get(id=data.pop('title_id'))
+        author = User.objects.get(id=data.pop('author'))
+        Review.objects.get_or_create(title=title, author=author, **data)
 
     def _process_comment(self, row):
-        review = Review.objects.get(id=row['review_id'])
-        author = User.objects.get(id=row['author'])
-        Comment.objects.get_or_create(
-            id=row['id'],
-            review=review,
-            text=row['text'],
-            author=author,
-            pub_date=row['pub_date'],
-        )
+        data = row.to_dict()
+        review = Review.objects.get(id=data.pop('review_id'))
+        author = User.objects.get(id=data.pop('author'))
+        Comment.objects.get_or_create(review=review, author=author, **data)
 
     def _load_data(self, file_name, processor, model_name):
         """Общая логика загрузки данных для разных моделей."""
