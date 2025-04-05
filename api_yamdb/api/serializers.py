@@ -9,7 +9,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
-from users.validators import validate_username_not_me
+from api.validators import validate_username
 from utils.constants import (ALLOWED_SYMBOLS_FOR_USERNAME, EMAIL_LENGTH,
                              MAX_SCORE, MIN_SCORE, USERNAME_LENGTH)
 
@@ -41,6 +41,7 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
+    ### Значение (от 0 до 10) может поменяться, документация будет врать. Либо удаляем, либо читаем тут как поправить этот момент https://stackoverflow.com/a/36091548.
     """
     Сериализатор для модели Review.
 
@@ -49,7 +50,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     от одного пользователя для каждого произведения.
     """
 
-    title = serializers.SlugRelatedField(
+    title = serializers.SlugRelatedField(  ### Лишнее поле. См. в спецификации. Пока вывод не соответствует ТЗ.
         slug_field='name',
         read_only=True
     )
@@ -60,10 +61,11 @@ class ReviewSerializer(serializers.ModelSerializer):
     score = serializers.IntegerField()
 
     class Meta:
-        fields = ['id', 'text', 'author', 'score', 'pub_date', 'title']
+        fields = ['id', 'text', 'author', 'score', 'pub_date', 'title']  ### Сверяемся с спецификацией, вывод не соответствует ТЗ.
         model = Review
 
     def validate_score(self, value):
+        ### Значение от 1 до 10 может поменяться, документация будет врать. Либо удаляем, либо читаем тут как поправить этот момент https://stackoverflow.com/a/36091548.
         """
         Проверяет, что оценка находится в диапазоне от 1 до 10.
 
@@ -76,7 +78,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         Raises:
             ValidationError: Если оценка выходит за пределы диапазона
         """
-        if value < MIN_SCORE or value > MAX_SCORE:
+        if value < MIN_SCORE or value > MAX_SCORE: ### Лишний or. Проверяйте "от до".
             raise serializers.ValidationError(
                 f'Оценка должна быть от {MIN_SCORE} до {MAX_SCORE}!'
             )
@@ -117,7 +119,7 @@ class CommentSerializer(serializers.ModelSerializer):
         отзывом.
     """
 
-    review = serializers.SlugRelatedField(
+    review = serializers.SlugRelatedField( ### Лишнее поле. См. в спецификации. Пока вывод не соответствует ТЗ
         slug_field='text',
         read_only=True
     )
@@ -127,7 +129,7 @@ class CommentSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        fields = ['id', 'text', 'author', 'pub_date', 'review']
+        fields = ['id', 'text', 'author', 'pub_date', 'review'] ### Сверяемся с спецификацией, вывод не соответствует ТЗ. 
         model = Comment
 
 
@@ -175,7 +177,8 @@ class TitleWriteSerializer(serializers.ModelSerializer):
         model = Title
 
     def to_representation(self, value):
-        """Переопределяет стандартное представление данных при сериализации.
+        """
+        Переопределяет стандартное представление данных при сериализации.
 
         Использует TitleReadSerializer для преобразования объекта в формат,
         идентичный GET-запросам.
@@ -184,7 +187,8 @@ class TitleWriteSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели User.
+    """
+    Сериализатор для модели User.
 
     Используется для сериализации данных пользователя, включая поля:
     username, email, first_name, last_name, bio и role.
@@ -204,8 +208,9 @@ class UserSerializer(serializers.ModelSerializer):
             self.fields['role'].read_only = True
 
 
-class SignupSerializer(serializers.ModelSerializer):
-    """Сериализатор для регистрации пользователей, отправки кода подтверждения.
+class SignupSerializer(serializers.Serializer):
+    """
+    Сериализатор для регистрации пользователей, отправки кода подтверждения.
 
     Обрабатывает валидацию email и username:
     - Проверяет соответствие username паттерну ALLOWED_SYMBOLS_FOR_USERNAME
@@ -227,16 +232,13 @@ class SignupSerializer(serializers.ModelSerializer):
         max_length=USERNAME_LENGTH,
         validators=[
             RegexValidator(regex=ALLOWED_SYMBOLS_FOR_USERNAME),
-            validate_username_not_me
+            validate_username
         ]
     )
 
-    class Meta:
-        model = User
-        fields = ('email', 'username')
-
     def validate(self, data):
-        """Проверяет уникальность связки email/username.
+        """
+        Проверяет уникальность связки email/username.
 
         Args:
             data (dict): Входные данные (email и username)
@@ -266,7 +268,8 @@ class SignupSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        """Создает или обновляет пользователя.
+        """
+        Создает или обновляет пользователя.
 
         Логика:
         1. Ищет пользователя по email и username
@@ -280,18 +283,17 @@ class SignupSerializer(serializers.ModelSerializer):
         Returns:
             User: Созданный/обновленный пользователь
         """
-        user, created = User.objects.get_or_create(
+        user, _ = User.objects.get_or_create(
             username=validated_data['username'],
             email=validated_data['email'],
-            defaults={'is_active': False}
         )
-        user.confirmation_code = default_token_generator.make_token(user)
-        user.save(update_fields=['confirmation_code'])
-        self.send_confirmation_email(user)
+        confirmation_code = default_token_generator.make_token(user)
+        self.send_confirmation_email(user, confirmation_code)
         return user
 
-    def send_confirmation_email(self, user):
-        """Отправляет письмо с кодом подтверждения.
+    def send_confirmation_email(self, user, confirmation_code):
+        """
+        Отправляет письмо с кодом подтверждения.
 
         Args:
             user (User): Объект пользователя для отправки
@@ -299,9 +301,10 @@ class SignupSerializer(serializers.ModelSerializer):
         Raises:
             ValidationError: При ошибке отправки email
         """
+
         send_mail(
             subject='Код подтверждения',
-            message=f'Ваш код подтверждения: {user.confirmation_code}',
+            message=f'Ваш код подтверждения: {confirmation_code}',
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
             fail_silently=False
@@ -309,7 +312,8 @@ class SignupSerializer(serializers.ModelSerializer):
 
 
 class TokenSerializer(serializers.Serializer):
-    """Сериализатор для получения токена аутентификации.
+    """
+    Сериализатор для получения токена аутентификации.
 
     Требует поля username и confirmation_code. Проверяет, что confirmation_code
     соответствует коду, хранящемуся для пользователя, и при успешной валидации
@@ -322,14 +326,12 @@ class TokenSerializer(serializers.Serializer):
     def validate(self, data):
         """Основная логика валидации кода подтверждения."""
         user = get_object_or_404(User, username=data['username'])
-        confirmation_code = data.get('confirmation_code')
-        if not confirmation_code:
+        if not default_token_generator.check_token(
+            user,
+            data['confirmation_code']
+        ):
             raise serializers.ValidationError(
                 {'confirmation_code': 'Код подтверждения обязателен.'}
-            )
-        if user.confirmation_code != confirmation_code:
-            raise serializers.ValidationError(
-                {'confirmation_code': 'Неверный код подтверждения.'}
             )
         return {
             'token': str(AccessToken.for_user(user)),
