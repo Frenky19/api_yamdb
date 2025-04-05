@@ -1,13 +1,14 @@
 from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.tokens import default_token_generator
 from django.core.validators import RegexValidator
 from django.db import models
 from django.utils.text import Truncator
 
 from users.service import get_max_length
-from users.validators import validate_username_not_me
+from api.validators import validate_username
 from utils.constants import (ALLOWED_SYMBOLS_FOR_USERNAME,
-                             CONFIRMATION_CODE_LENGTH, EMAIL_LENGTH,
-                             LIMIT_OF_SYMBOLS, USERNAME_LENGTH)
+                             EMAIL_LENGTH, LIMIT_OF_SYMBOLS,
+                             USERNAME_LENGTH)
 
 
 class User(AbstractUser):
@@ -42,7 +43,7 @@ class User(AbstractUser):
                 regex=ALLOWED_SYMBOLS_FOR_USERNAME,
                 message='Недопустимые символы в имени пользователя.'
             ),
-            validate_username_not_me
+            validate_username
         ]
     )
     email = models.EmailField(
@@ -56,11 +57,6 @@ class User(AbstractUser):
         max_length=get_max_length(ROLE_CHOICES),
         choices=ROLE_CHOICES,
         default=USER
-    )
-    confirmation_code = models.CharField(
-        'Код подтверждения',
-        max_length=CONFIRMATION_CODE_LENGTH,
-        blank=True
     )
 
     class Meta:
