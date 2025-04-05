@@ -6,7 +6,7 @@ from utils.constants import ELEMENTS_ON_PAGE_IN_ADMIN
 
 
 @admin.register(User)
-class CustomUserAdmin(UserAdmin):
+class UserAdmin(UserAdmin):
     """Настройка отображения пользователя в административной панели."""
 
     list_display = (
