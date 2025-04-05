@@ -1,14 +1,12 @@
 from django.contrib.auth.models import AbstractUser
-from django.contrib.auth.tokens import default_token_generator
 from django.core.validators import RegexValidator
 from django.db import models
 from django.utils.text import Truncator
 
-from users.service import get_max_length
 from api.validators import validate_username
-from utils.constants import (ALLOWED_SYMBOLS_FOR_USERNAME,
-                             EMAIL_LENGTH, LIMIT_OF_SYMBOLS,
-                             USERNAME_LENGTH)
+from users.service import get_max_length
+from utils.constants import (ALLOWED_SYMBOLS_FOR_USERNAME, EMAIL_LENGTH,
+                             LIMIT_OF_SYMBOLS, USERNAME_LENGTH)
 
 
 class User(AbstractUser):

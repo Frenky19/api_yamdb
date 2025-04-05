@@ -7,9 +7,9 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import AccessToken
 
+from api.validators import validate_username
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
-from api.validators import validate_username
 from utils.constants import (ALLOWED_SYMBOLS_FOR_USERNAME, EMAIL_LENGTH,
                              MAX_SCORE, MIN_SCORE, USERNAME_LENGTH)
 
@@ -129,7 +129,7 @@ class CommentSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        fields = ['id', 'text', 'author', 'pub_date', 'review'] ### Сверяемся с спецификацией, вывод не соответствует ТЗ. 
+        fields = ['id', 'text', 'author', 'pub_date', 'review'] ### Сверяемся с спецификацией, вывод не соответствует ТЗ.
         model = Comment
 
 

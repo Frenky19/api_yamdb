@@ -4,8 +4,7 @@ from django.utils.text import Truncator
 
 from api.validators import validate_year
 from users.models import User
-from utils.constants import (LIMIT_OF_SYMBOLS, NAME_LIMIT, MAX_SCORE,
-                             MIN_SCORE)
+from utils.constants import LIMIT_OF_SYMBOLS, MAX_SCORE, MIN_SCORE, NAME_LIMIT
 
 
 class BaseSlugModel(models.Model):
