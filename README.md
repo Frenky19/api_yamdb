@@ -103,19 +103,24 @@ python manage.py runserver
 
 1. POST /api/v1/auth/signup/
 
+```json
 {
 "email": "string",
 "username": "string"
 }
+```
 
 2. POST /api/v1/auth/token/
 
+```json
 {
 "token": "string"
 }
+```
 
 3. GET /api/v1/titles/
 
+```json
 {
 "count": 0,
 "next": "string",
@@ -124,9 +129,11 @@ python manage.py runserver
 {}
 ]
 }
+```
 
 4. POST /api/v1/titles/1/reviews/
 
+```json
 {
 "id": 0,
 "text": "string",
@@ -134,9 +141,11 @@ python manage.py runserver
 "score": 1,
 "pub_date": "2019-08-24T14:15:22Z"
 }
+```
 
 5. PATCH /api/v1/users/me/
 
+```json
 {
 "username": "^w\\Z",
 "email": "user@example.com",
@@ -145,6 +154,7 @@ python manage.py runserver
 "bio": "string",
 "role": "user"
 }
+```
 
 ## Модели данных
 
