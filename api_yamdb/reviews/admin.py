@@ -68,6 +68,7 @@ class TitleAdmin(admin.ModelAdmin):
         'year',
         'category',
         'description',
+        'get_genres'
     )
     list_editable = ('category',)
     search_fields = ('^name', '^year', '^category__name', '^genre__name')
@@ -75,6 +76,7 @@ class TitleAdmin(admin.ModelAdmin):
     filter_horizontal = ('genre',)
 
     def get_queryset(self, request):
+        """Возвращает QuerySet с предварительной выборкой связанных жанров."""
         return super().get_queryset(request).prefetch_related('genre')
 
     @admin.display(description='Жанры')
