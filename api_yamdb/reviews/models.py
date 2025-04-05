@@ -2,16 +2,19 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.text import Truncator
 
-from reviews.validators import validate_year
+from api.validators import validate_year
 from users.models import User
-from utils.constants import (LIMIT_OF_SYMBOLS, LONG_TEXT_LIMIT, MAX_SCORE,
+from utils.constants import (LIMIT_OF_SYMBOLS, NAME_LIMIT, MAX_SCORE,
                              MIN_SCORE)
 
 
 class BaseSlugModel(models.Model):
     """Абстрактная модель для жанров и категорий."""
-    name = models.CharField(max_length=LONG_TEXT_LIMIT, unique=True)
-    slug = models.SlugField(unique=True)
+
+    name = models.CharField(verbose_name='Название',
+                            max_length=NAME_LIMIT,
+                            unique=True)
+    slug = models.SlugField(verbose_name='Уникальный слаг', unique=True)
 
     class Meta:
         abstract = True
@@ -38,7 +41,8 @@ class Genre(BaseSlugModel):
 
 
 class Title(models.Model):
-    """Модель произведения (фильм, книга и т.д.).
+    """
+    Модель произведения (фильм, книга и т.д.).
 
     Attributes:
         name: Название произведения.
@@ -49,29 +53,29 @@ class Title(models.Model):
     """
 
     name = models.CharField(
-        'название',
-        max_length=LONG_TEXT_LIMIT,
+        verbose_name='Название',
+        max_length=NAME_LIMIT,
         db_index=True
     )
     year = models.PositiveIntegerField(
-        'год',
+        verbose_name='Год',
         validators=(validate_year,)
     )
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
-        verbose_name='категория',
+        verbose_name='Категория',
         null=True,
         blank=True
     )
     description = models.TextField(
-        'описание',
+        verbose_name='Описание',
         null=True,
         blank=True
     )
     genre = models.ManyToManyField(
         Genre,
-        verbose_name='жанр'
+        verbose_name='Жанр'
     )
 
     class Meta:
@@ -87,18 +91,14 @@ class Title(models.Model):
 class BasePublicationModel(models.Model):
     """Абстрактная модель для отзывов и комментариев."""
 
-    text = models.CharField(
-        max_length=LONG_TEXT_LIMIT,
-        verbose_name='текст'
-    )
+    text = models.TextField(verbose_name='Текст')
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='автор',
-        null=True
+        verbose_name='Автор',
     )
     pub_date = models.DateTimeField(
-        'дата публикации',
+        verbose_name='Дата публикации',
         auto_now_add=True,
         db_index=True
     )
@@ -109,34 +109,23 @@ class BasePublicationModel(models.Model):
 
     def __str__(self):
         """Возвращает ограниченное строковое представление текста."""
-        return Truncator(self.text).words(LONG_TEXT_LIMIT)
+        return Truncator(self.text).words(LIMIT_OF_SYMBOLS)
 
 
 class Review(BasePublicationModel):
-    """Модель отзывов на произведения.
+    """
+    Модель отзывов на произведения.
 
-    Attributes:
-        title: Связанное произведение (ForeignKey).
-        score: Оценка от 1 до 10.
-
-    Constraints:
-        Один автор может оставить только один отзыв на произведение.
+    Один автор может оставить только один отзыв на произведение.
     """
 
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        verbose_name='произведение'
-    )
-    text = models.TextField()
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        verbose_name='автор',
-        null=True
+        verbose_name='Произведение'
     )
     score = models.PositiveSmallIntegerField(
-        'оценка',
+        'Оценка',
         validators=(
             MinValueValidator(MIN_SCORE),
             MaxValueValidator(MAX_SCORE)
@@ -157,7 +146,8 @@ class Review(BasePublicationModel):
 
 
 class Comment(BasePublicationModel):
-    """Модель комментариев к отзывам.
+    """
+    Модель комментариев к отзывам.
 
     Attributes:
         review: Связанный отзыв (ForeignKey).
@@ -166,17 +156,10 @@ class Comment(BasePublicationModel):
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
-        verbose_name='отзыв'
-    )
-    text = models.TextField('текст комментария',)
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        verbose_name='автор',
-        null=True
+        verbose_name='Отзыв'
     )
     pub_date = models.DateTimeField(
-        'дата публикации',
+        'Дата публикации',
         auto_now_add=True,
         db_index=True
     )
