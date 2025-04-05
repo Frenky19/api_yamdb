@@ -3,18 +3,18 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, viewsets
 from rest_framework.filters import SearchFilter
-from rest_framework.mixins import (
-    CreateModelMixin, DestroyModelMixin, ListModelMixin)
+from rest_framework.mixins import (CreateModelMixin, DestroyModelMixin,
+                                   ListModelMixin)
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from api.filters import TitleFilter
-from reviews.models import Category, Genre, Review, Title
+from api.permissions import (AdminModeratorAuthorPermission,
+                             IsAdminUserOrReadOnly)
 from api.serializers import (CategorySerializer, CommentSerializer,
                              GenreSerializer, ReviewSerializer,
                              TitleReadSerializer, TitleWriteSerializer)
-from api.permissions import (AdminModeratorAuthorPermission,
-                             IsAdminUserOrReadOnly)
+from reviews.models import Category, Genre, Review, Title
 
 
 class CustomModelViewSet(
@@ -39,6 +39,11 @@ class CustomModelViewSet(
     - destroy: Обработка удаления объекта модели.
     """
 
+    filter_backends = (SearchFilter,)
+    search_fields = ('name', )
+    lookup_field = 'slug'
+    permission_classes = (IsAdminUserOrReadOnly,)
+
 
 class CategoryViewSet(CustomModelViewSet):
     """
@@ -62,10 +67,6 @@ class CategoryViewSet(CustomModelViewSet):
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (IsAdminUserOrReadOnly,)
-    filter_backends = (SearchFilter, )
-    search_fields = ('name', )
-    lookup_field = 'slug'
 
 
 class GenreViewSet(CustomModelViewSet):
@@ -90,11 +91,6 @@ class GenreViewSet(CustomModelViewSet):
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (IsAdminUserOrReadOnly,)
-    filter_backends = (SearchFilter,)
-    search_fields = ('name', )
-    lookup_field = 'slug'
-### Обратите внимание, что еще можно убрать в общий класс.
 
 
 class TitleViewSet(ModelViewSet):

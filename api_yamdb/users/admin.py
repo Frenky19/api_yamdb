@@ -1,8 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from users.constants import ELEMENTS_ON_PAGE_IN_ADMIN
 from users.models import User
+from utils.constants import ELEMENTS_ON_PAGE_IN_ADMIN
 
 
 @admin.register(User)

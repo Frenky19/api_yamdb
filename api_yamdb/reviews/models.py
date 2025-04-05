@@ -3,9 +3,9 @@ from django.db import models
 from django.utils.text import Truncator
 
 from reviews.validators import validate_year
-from users.constants import (LIMIT_OF_SYMBOLS, LONG_TEXT_LIMIT, MAX_SCORE,
-                             MIN_SCORE)
 from users.models import User
+from utils.constants import (LIMIT_OF_SYMBOLS, LONG_TEXT_LIMIT, MAX_SCORE,
+                             MIN_SCORE)
 
 
 class BaseSlugModel(models.Model):

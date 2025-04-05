@@ -3,7 +3,6 @@ from django.contrib import admin
 from api_yamdb.settings import ADMIN_EMPTY_VALUE_DISPLAY
 from reviews.models import Category, Comment, Genre, Review, Title
 
-
 empty_value_display = ADMIN_EMPTY_VALUE_DISPLAY
 
 

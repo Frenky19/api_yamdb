@@ -1,6 +1,6 @@
 from django.core.exceptions import ValidationError
 
-from users.constants import FORBIDDEN_USERNAME
+from utils.constants import FORBIDDEN_USERNAME
 
 
 def validate_username_not_me(value):
