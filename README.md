@@ -90,13 +90,61 @@ python manage.py runserver
 ## Основные эндпоинты API
 
 
-| Метод  | Путь                   | Описание                     | Доступ         |
-|--------|------------------------|------------------------------|----------------|
-| POST   | `/auth/signup/`        | Регистрация по email         | Все            |
-| POST   | `/auth/token/`         | Получение JWT-токена         | Все            |
-| GET    | `/titles/`             | Список произведений          | Все            |
-| POST   | `/titles/{id}/reviews/`| Создать отзыв                | Аутентиф.      |
-| PATCH  | `/users/me/`           | Обновить профиль             | Владелец       |
+| Метод  | Путь                         | Описание                     | Доступ         |
+|--------|------------------------------|------------------------------|----------------|
+| GET    | `redoc/          `           | Документация проекта         | Все            |
+| POST   | `api/v1/auth/signup/`        | Регистрация по email         | Все            |
+| POST   | `api/v1/auth/token/`         | Получение JWT-токена         | Все            |
+| GET    | `api/v1/titles/`             | Список произведений          | Все            |
+| POST   | `api/v1/titles/{id}/reviews/`| Создать отзыв                | Аутентиф.      |
+| PATCH  | `api/v1/users/me/`           | Обновить профиль             | Владелец       |
+
+### Успешные ответы на запросы
+
+1. POST /api/v1/auth/signup/
+
+{
+"email": "string",
+"username": "string"
+}
+
+2. POST /api/v1/auth/token/
+
+{
+"token": "string"
+}
+
+3. GET /api/v1/titles/
+
+{
+"count": 0,
+"next": "string",
+"previous": "string",
+"results": [
+{}
+]
+}
+
+4. POST /api/v1/titles/1/reviews/
+
+{
+"id": 0,
+"text": "string",
+"author": "string",
+"score": 1,
+"pub_date": "2019-08-24T14:15:22Z"
+}
+
+5. PATCH /api/v1/users/me/
+
+{
+"username": "^w\\Z",
+"email": "user@example.com",
+"first_name": "string",
+"last_name": "string",
+"bio": "string",
+"role": "user"
+}
 
 ## Модели данных
 
