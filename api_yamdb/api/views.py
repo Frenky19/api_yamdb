@@ -49,7 +49,7 @@ class BaseModelViewSet(
     """
 
     filter_backends = (SearchFilter,)
-    search_fields = ('name', )
+    search_fields = ('name',)
     lookup_field = 'slug'
     permission_classes = (IsAdminUserOrReadOnly,)
 

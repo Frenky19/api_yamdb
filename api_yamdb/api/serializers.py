@@ -276,10 +276,6 @@ class SignupSerializer(serializers.Serializer):
         user, _ = User.objects.get_or_create(
             username=validated_data['username'],
             email=validated_data['email'],
-            # Я предполагал, что по умолчанию новый пользователь не активен,
-            # до тех пор, пока он не аутентифицируется (получит токен JWT)
-            # Таким образом будет проще отследить кол-во "мертвых"
-            # пользователей
         )
         confirmation_code = default_token_generator.make_token(user)
         self.send_confirmation_email(user, confirmation_code)

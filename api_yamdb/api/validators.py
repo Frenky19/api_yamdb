@@ -1,15 +1,8 @@
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
+from api.decorators import doc
 from utils.constants import FORBIDDEN_USERNAME
-
-
-def doc(docstring):
-    """Декоратор для динамической подстановки значений в докстринг."""
-    def decorator(func):
-        func.__doc__ = docstring
-        return func
-    return decorator
 
 
 @doc(f'Запрещает использование имени {FORBIDDEN_USERNAME}')
