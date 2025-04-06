@@ -41,7 +41,6 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    ### ГОТОВО Значение (от 0 до 10) может поменяться, документация будет врать. Либо удаляем, либо читаем тут как поправить этот момент https://stackoverflow.com/a/36091548.
     """
     Сериализатор для модели Review.
 
@@ -49,6 +48,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     Реализует проверку оценки и уникальности отзыва
     от одного пользователя для каждого произведения.
     """
+
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True
@@ -56,13 +56,12 @@ class ReviewSerializer(serializers.ModelSerializer):
     score = serializers.IntegerField()
 
     class Meta:
-        fields = ['id', 'text', 'author', 'score', 'pub_date']  ### Готово Сверяемся с спецификацией, вывод не соответствует ТЗ.
+        fields = ['id', 'text', 'author', 'score', 'pub_date']
         model = Review
 
     def validate_score(self, value):
-        ### ГОТОВО Значение от 1 до 10 может поменяться, документация будет врать. Либо удаляем, либо читаем тут как поправить этот момент https://stackoverflow.com/a/36091548.
         """
-        Проверяет, что оценка находится в конфигурируемом диапазоне.
+        Проверяет, что оценка находится в заданном диапазоне.
 
         Args:
             value (int): Значение оценки
@@ -73,7 +72,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         Raises:
             ValidationError: Если оценка выходит за пределы диапазона
         """
-        if not (MIN_SCORE <= value <= MAX_SCORE): ### Готово Лишний or. Проверяйте "от до".
+        if not (MIN_SCORE <= value <= MAX_SCORE):
             raise serializers.ValidationError(
                 f'Оценка должна быть от {MIN_SCORE} до {MAX_SCORE}!'
             )
@@ -113,13 +112,14 @@ class CommentSerializer(serializers.ModelSerializer):
     Автоматически связывает комментарий с его автором и соответствующим
         отзывом.
     """
+
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True
     )
 
     class Meta:
-        fields = ['id', 'text', 'author', 'pub_date'] ### ГОТОВО Сверяемся с спецификацией, вывод не соответствует ТЗ.
+        fields = ['id', 'text', 'author', 'pub_date']
         model = Comment
 
 
@@ -276,6 +276,10 @@ class SignupSerializer(serializers.Serializer):
         user, _ = User.objects.get_or_create(
             username=validated_data['username'],
             email=validated_data['email'],
+            # Я предполагал, что по умолчанию новый пользователь не активен,
+            # до тех пор, пока он не аутентифицируется
+            # Таким образом будет проще отследить кол-во "мертвых"
+            # пользователей
         )
         confirmation_code = default_token_generator.make_token(user)
         self.send_confirmation_email(user, confirmation_code)

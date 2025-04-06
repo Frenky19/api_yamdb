@@ -26,7 +26,7 @@ from reviews.models import Category, Genre, Review, Title
 from users.models import User
 
 
-class CustomModelViewSet(
+class BaseModelViewSet(
     CreateModelMixin,
     ListModelMixin,
     DestroyModelMixin,
@@ -54,7 +54,7 @@ class CustomModelViewSet(
     permission_classes = (IsAdminUserOrReadOnly,)
 
 
-class CategoryViewSet(CustomModelViewSet):
+class CategoryViewSet(BaseModelViewSet):
     """
     API endpoint для работы с категориями произведений.
 
@@ -78,7 +78,7 @@ class CategoryViewSet(CustomModelViewSet):
     serializer_class = CategorySerializer
 
 
-class GenreViewSet(CustomModelViewSet):
+class GenreViewSet(BaseModelViewSet):
     """
     API endpoint для работы с жанрами произведений.
 

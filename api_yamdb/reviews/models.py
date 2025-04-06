@@ -3,38 +3,22 @@ from django.db import models
 from django.utils.text import Truncator
 
 from api.validators import validate_year
-from users.models import User
+from reviews.abstract import BaseCategoryGenreModel, BaseReviewCommentModel
 from utils.constants import LIMIT_OF_SYMBOLS, MAX_SCORE, MIN_SCORE, NAME_LIMIT
 
 
-class BaseSlugModel(models.Model):
-    """Абстрактная модель для жанров и категорий."""
-
-    name = models.CharField(verbose_name='Название',
-                            max_length=NAME_LIMIT,
-                            unique=True)
-    slug = models.SlugField(verbose_name='Уникальный слаг', unique=True)
-
-    class Meta:
-        abstract = True
-        ordering = ["name"]
-
-    def __str__(self):
-        return Truncator(self.name).words(LIMIT_OF_SYMBOLS)
-
-
-class Category(BaseSlugModel):
+class Category(BaseCategoryGenreModel):
     """Модель категорий произведений (например, 'Фильмы', 'Книги')."""
 
-    class Meta(BaseSlugModel.Meta):
+    class Meta(BaseCategoryGenreModel.Meta):
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
 
-class Genre(BaseSlugModel):
+class Genre(BaseCategoryGenreModel):
     """Модель жанров произведений (например, 'Фантастика', 'Драма')."""
 
-    class Meta(BaseSlugModel.Meta):
+    class Meta(BaseCategoryGenreModel.Meta):
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
 
@@ -87,31 +71,7 @@ class Title(models.Model):
         return Truncator(self.name).words(LIMIT_OF_SYMBOLS)
 
 
-class BasePublicationModel(models.Model):
-    """Абстрактная модель для отзывов и комментариев."""
-
-    text = models.TextField(verbose_name='Текст')
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        verbose_name='Автор',
-    )
-    pub_date = models.DateTimeField(
-        verbose_name='Дата публикации',
-        auto_now_add=True,
-        db_index=True
-    )
-
-    class Meta:
-        abstract = True
-        ordering = ['pub_date']
-
-    def __str__(self):
-        """Возвращает ограниченное строковое представление текста."""
-        return Truncator(self.text).words(LIMIT_OF_SYMBOLS)
-
-
-class Review(BasePublicationModel):
+class Review(BaseReviewCommentModel):
     """
     Модель отзывов на произведения.
 
@@ -132,7 +92,7 @@ class Review(BasePublicationModel):
         error_messages={'validators': f'Оценка от {MIN_SCORE} до {MAX_SCORE}!'}
     )
 
-    class Meta(BasePublicationModel.Meta):
+    class Meta(BaseReviewCommentModel.Meta):
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
         default_related_name = '%(class)ss'
@@ -144,7 +104,7 @@ class Review(BasePublicationModel):
         ]
 
 
-class Comment(BasePublicationModel):
+class Comment(BaseReviewCommentModel):
     """
     Модель комментариев к отзывам.
 
@@ -163,7 +123,7 @@ class Comment(BasePublicationModel):
         db_index=True
     )
 
-    class Meta(BasePublicationModel.Meta):
+    class Meta(BaseReviewCommentModel.Meta):
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
         default_related_name = '%(class)ss'
