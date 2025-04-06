@@ -41,19 +41,14 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    ### Значение (от 0 до 10) может поменяться, документация будет врать. Либо удаляем, либо читаем тут как поправить этот момент https://stackoverflow.com/a/36091548.
+    ### ГОТОВО Значение (от 0 до 10) может поменяться, документация будет врать. Либо удаляем, либо читаем тут как поправить этот момент https://stackoverflow.com/a/36091548.
     """
     Сериализатор для модели Review.
 
     Обеспечивает создание и получение отзывов для произведений.
-    Реализует проверку оценки (от 0 до 10) и уникальности отзыва
+    Реализует проверку оценки и уникальности отзыва
     от одного пользователя для каждого произведения.
     """
-
-    title = serializers.SlugRelatedField(  ### Лишнее поле. См. в спецификации. Пока вывод не соответствует ТЗ.
-        slug_field='name',
-        read_only=True
-    )
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True
@@ -61,13 +56,13 @@ class ReviewSerializer(serializers.ModelSerializer):
     score = serializers.IntegerField()
 
     class Meta:
-        fields = ['id', 'text', 'author', 'score', 'pub_date', 'title']  ### Сверяемся с спецификацией, вывод не соответствует ТЗ.
+        fields = ['id', 'text', 'author', 'score', 'pub_date']  ### Готово Сверяемся с спецификацией, вывод не соответствует ТЗ.
         model = Review
 
     def validate_score(self, value):
-        ### Значение от 1 до 10 может поменяться, документация будет врать. Либо удаляем, либо читаем тут как поправить этот момент https://stackoverflow.com/a/36091548.
+        ### ГОТОВО Значение от 1 до 10 может поменяться, документация будет врать. Либо удаляем, либо читаем тут как поправить этот момент https://stackoverflow.com/a/36091548.
         """
-        Проверяет, что оценка находится в диапазоне от 1 до 10.
+        Проверяет, что оценка находится в конфигурируемом диапазоне.
 
         Args:
             value (int): Значение оценки
@@ -78,7 +73,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         Raises:
             ValidationError: Если оценка выходит за пределы диапазона
         """
-        if value < MIN_SCORE or value > MAX_SCORE: ### Лишний or. Проверяйте "от до".
+        if not (MIN_SCORE <= value <= MAX_SCORE): ### Готово Лишний or. Проверяйте "от до".
             raise serializers.ValidationError(
                 f'Оценка должна быть от {MIN_SCORE} до {MAX_SCORE}!'
             )
@@ -118,18 +113,13 @@ class CommentSerializer(serializers.ModelSerializer):
     Автоматически связывает комментарий с его автором и соответствующим
         отзывом.
     """
-
-    review = serializers.SlugRelatedField( ### Лишнее поле. См. в спецификации. Пока вывод не соответствует ТЗ
-        slug_field='text',
-        read_only=True
-    )
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True
     )
 
     class Meta:
-        fields = ['id', 'text', 'author', 'pub_date', 'review'] ### Сверяемся с спецификацией, вывод не соответствует ТЗ.
+        fields = ['id', 'text', 'author', 'pub_date'] ### ГОТОВО Сверяемся с спецификацией, вывод не соответствует ТЗ.
         model = Comment
 
 
